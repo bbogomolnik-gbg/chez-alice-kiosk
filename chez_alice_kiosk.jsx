@@ -123,25 +123,25 @@ const MENU = {
     items: [
       // ── Salads ──
       { id: "l1", name: "Caesar Salad", price: 11.00, desc: "Romaine, shaved parmesan, croutons with caesar dressing", img: `${IMG}/lun_salad_caesar.webp`, section: "Salads", modifierGroups: [
-        { groupId: "quick_mods", allowedIds: ["mod_to_go","mod_add_grilled_chicken","mod_add_avocado","mod_no_cheese","mod_sauce_on_side","mod_no_tomato","mod_tomato"] }
+        { groupId: "quick_mods", allowedIds: ["mod_no_make","mod_to_go_cup","mod_to_go","mod_add_avocado","mod_add_grilled_chicken","mod_cold","mod_hot","mod_lettuce","mod_mayo","mod_mustard","mod_no_avocado","mod_no_bacon","mod_no_cheese","mod_no_lettuce","mod_no_onion","mod_no_tomato","mod_onion","mod_pickle","mod_sauce_on_side","mod_sliced","mod_toasted","mod_tomato"] }
       ]},
       { id: "l4", name: "Chez Alice Salad", price: 12.00, desc: "Mixed greens, seasonal fruit, toasted pecans, aged blue cheese, cider vinaigrette", img: `${IMG}/lun_chez_alice_salad.webp`, section: "Salads", modifierGroups: [
-        { groupId: "quick_mods", allowedIds: ["mod_to_go","mod_add_grilled_chicken","mod_add_avocado","mod_no_cheese","mod_sauce_on_side","mod_no_onion","mod_onion","mod_no_tomato","mod_tomato"] }
+        { groupId: "quick_mods", allowedIds: ["mod_no_make","mod_to_go_cup","mod_to_go","mod_add_avocado","mod_add_grilled_chicken","mod_cold","mod_hot","mod_lettuce","mod_mayo","mod_mustard","mod_no_avocado","mod_no_bacon","mod_no_cheese","mod_no_lettuce","mod_no_onion","mod_no_tomato","mod_onion","mod_pickle","mod_sauce_on_side","mod_sliced","mod_toasted","mod_tomato"] }
       ]},
       { id: "l6", name: "Cobb Salad", price: 13.00, desc: "Greens, bacon, avocado, egg, cherry tomato, cucumber, onion, garbanzo beans, pecorino cheese and Ranch dressing", tags: ["GF"], img: `${IMG}/lun_cobb_salad.webp`, section: "Salads", modifierGroups: [
-        { groupId: "quick_mods", allowedIds: ["mod_to_go","mod_add_avocado","mod_no_avocado","mod_no_bacon","mod_no_cheese","mod_sauce_on_side","mod_no_onion","mod_onion","mod_no_tomato","mod_tomato"] }
+        { groupId: "quick_mods", allowedIds: ["mod_no_make","mod_to_go_cup","mod_to_go","mod_add_avocado","mod_add_grilled_chicken","mod_cold","mod_hot","mod_lettuce","mod_mayo","mod_mustard","mod_no_avocado","mod_no_bacon","mod_no_cheese","mod_no_lettuce","mod_no_onion","mod_no_tomato","mod_onion","mod_pickle","mod_sauce_on_side","mod_sliced","mod_toasted","mod_tomato"] }
       ]},
       { id: "l5", name: "Chicken Salad", price: 13.00, desc: "Apples, ginger and tarragon", img: `${IMG}/lun_chicken_salad.webp`, section: "Salads", modifierGroups: [
-        { groupId: "quick_mods", allowedIds: ["mod_to_go","mod_add_avocado","mod_no_onion","mod_onion","mod_sauce_on_side","mod_no_tomato","mod_tomato"] }
+        { groupId: "quick_mods", allowedIds: ["mod_no_make","mod_to_go_cup","mod_to_go","mod_add_avocado","mod_add_grilled_chicken","mod_cold","mod_hot","mod_lettuce","mod_mayo","mod_mustard","mod_no_avocado","mod_no_bacon","mod_no_cheese","mod_no_lettuce","mod_no_onion","mod_no_tomato","mod_onion","mod_pickle","mod_sauce_on_side","mod_sliced","mod_toasted","mod_tomato"] }
       ]},
       { id: "l10", name: "Salmon & Potato Salad", price: 16.00, desc: "Roasted salmon, french fingerling potatoes, green beans, peas, dill sauce", tags: ["GF"], img: `${IMG}/lun_salmon_potato_salad.webp`, section: "Salads", modifierGroups: [
-        { groupId: "quick_mods", allowedIds: ["mod_to_go","mod_add_avocado","mod_no_onion","mod_onion","mod_sauce_on_side","mod_no_tomato","mod_tomato"] }
+        { groupId: "quick_mods", allowedIds: ["mod_no_make","mod_to_go_cup","mod_to_go","mod_add_avocado","mod_add_grilled_chicken","mod_cold","mod_hot","mod_lettuce","mod_mayo","mod_mustard","mod_no_avocado","mod_no_bacon","mod_no_cheese","mod_no_lettuce","mod_no_onion","mod_no_tomato","mod_onion","mod_pickle","mod_sauce_on_side","mod_sliced","mod_toasted","mod_tomato"] }
       ]},
       { id: "l11", name: "Tuna Salad", price: 12.00, desc: "Red onions, celery, lettuce & tomato", img: `${IMG}/lun_tuna_salad.webp`, section: "Salads", modifierGroups: [
-        { groupId: "quick_mods", allowedIds: ["mod_to_go","mod_add_avocado","mod_sauce_on_side","mod_no_onion","mod_onion","mod_no_tomato","mod_tomato"] }
+        { groupId: "quick_mods", allowedIds: ["mod_no_make","mod_to_go_cup","mod_to_go","mod_add_avocado","mod_add_grilled_chicken","mod_cold","mod_hot","mod_lettuce","mod_mayo","mod_mustard","mod_no_avocado","mod_no_bacon","mod_no_cheese","mod_no_lettuce","mod_no_onion","mod_no_tomato","mod_onion","mod_pickle","mod_sauce_on_side","mod_sliced","mod_toasted","mod_tomato"] }
       ]},
       { id: "lf6", name: "Salade Niçoise", price: 16.00, desc: "Dry tuna, green beans, hard boiled eggs, black olives, tomatoes, mixed greens with mustard vinaigrette", tags: ["GF"], img: `${IMG}/lun_salade_nicoise.webp`, section: "Salads", modifierGroups: [
-        { groupId: "quick_mods", allowedIds: ["mod_to_go","mod_add_avocado","mod_sauce_on_side","mod_no_onion","mod_onion","mod_no_tomato","mod_tomato"] }
+        { groupId: "quick_mods", allowedIds: ["mod_no_make","mod_to_go_cup","mod_to_go","mod_add_avocado","mod_add_grilled_chicken","mod_cold","mod_hot","mod_lettuce","mod_mayo","mod_mustard","mod_no_avocado","mod_no_bacon","mod_no_cheese","mod_no_lettuce","mod_no_onion","mod_no_tomato","mod_onion","mod_pickle","mod_sauce_on_side","mod_sliced","mod_toasted","mod_tomato"] }
       ]},
       // ── Sandwiches ──
       { id: "l2", name: "Caprese", price: 12.00, desc: "Tomatoes, fresh mozzarella, arugula, balsamic reduction on focaccia", img: `${IMG}/lun_caprese_sandwich.webp`, section: "Sandwiches", modifierGroups: [
@@ -888,8 +888,8 @@ function ItemDetail({ item, onBack, addToCart, onOpenCart, cartCount, cartTotal 
                   </div>
                   {/* ── Order Type (Hot/Cold/To Go/No Make) ── */}
                   {(() => {
-                    const ORDER_TYPE_IDS = ["mod_hot","mod_cold","mod_to_go","mod_no_make"];
-                    const ORDER_TYPE_COLORS = { mod_hot: "#D32F2F", mod_cold: "#1976D2", mod_to_go: "#388E3C", mod_no_make: "#F57C00" };
+                    const ORDER_TYPE_IDS = ["mod_hot","mod_cold","mod_to_go","mod_to_go_cup","mod_no_make"];
+                    const ORDER_TYPE_COLORS = { mod_hot: "#D32F2F", mod_cold: "#1976D2", mod_to_go: "#388E3C", mod_to_go_cup: "#2E7D32", mod_no_make: "#F57C00" };
                     const orderTypes = resolvedAddons.filter(a => ORDER_TYPE_IDS.includes(a.id));
                     if (orderTypes.length === 0) return null;
                     return (
@@ -919,7 +919,7 @@ function ItemDetail({ item, onBack, addToCart, onOpenCart, cartCount, cartTotal 
 
                   <div style={{ display: "flex", gap: 0 }}>
                     {groups.map((grp, gi) => {
-                      const ORDER_TYPE_IDS = ["mod_hot","mod_cold","mod_to_go","mod_no_make"];
+                      const ORDER_TYPE_IDS = ["mod_hot","mod_cold","mod_to_go","mod_to_go_cup","mod_no_make"];
                       const filteredItems = grp.items.filter(a => !ORDER_TYPE_IDS.includes(a.id));
                       if (filteredItems.length === 0) return null;
                       return (
