@@ -1370,20 +1370,61 @@ function PaymentScreen({ grandTotal, paymentMethod, onBack, onComplete }) {
 function ConfirmationScreen({ orderNumber, customerName, phoneNumber, cart, cartTotal, tax, tipAmount, ccFee, grandTotal, paymentMethod, onNewOrder }) {
   const [smsSent, setSmsSent] = useState(false);
 
-  // Silent print via hidden iframe
+  // Silent print via hidden iframe with embedded logo
   const silentPrint = useCallback(() => {
     const receiptEl = document.getElementById("receipt-section");
     if (!receiptEl) return;
-    const iframe = document.createElement("iframe");
-    iframe.style.cssText = "position:absolute;width:0;height:0;border:0;";
-    document.body.appendChild(iframe);
-    const doc = iframe.contentDocument || iframe.contentWindow.document;
-    doc.open();
-    doc.write(`<html><head><style>body{font-family:'Josefin Sans',sans-serif;padding:20px;font-size:12px;}img{max-width:200px;}</style></head><body>${receiptEl.innerHTML}</body></html>`);
-    doc.close();
-    iframe.contentWindow.focus();
-    iframe.contentWindow.print();
-    setTimeout(() => document.body.removeChild(iframe), 1000);
+
+    // Clone receipt and convert logo to inline for print
+    const clone = receiptEl.cloneNode(true);
+    const imgs = clone.querySelectorAll("img");
+
+    // Convert all images to base64 for reliable iframe printing
+    const promises = Array.from(imgs).map(img => {
+      return new Promise(resolve => {
+        const canvas = document.createElement("canvas");
+        const src = new Image();
+        src.crossOrigin = "anonymous";
+        src.onload = () => {
+          canvas.width = src.naturalWidth;
+          canvas.height = src.naturalHeight;
+          canvas.getContext("2d").drawImage(src, 0, 0);
+          try { img.src = canvas.toDataURL("image/png"); } catch(e) {}
+          resolve();
+        };
+        src.onerror = () => resolve();
+        src.src = img.src;
+      });
+    });
+
+    Promise.all(promises).then(() => {
+      const iframe = document.createElement("iframe");
+      iframe.style.cssText = "position:fixed;left:-9999px;width:0;height:0;border:0;";
+      document.body.appendChild(iframe);
+      const doc = iframe.contentDocument || iframe.contentWindow.document;
+      doc.open();
+      doc.write(`<html><head><style>
+        body { font-family: Arial, sans-serif; padding: 10px; font-size: 12px; color: #000; }
+        img { max-width: 180px; display: block; margin: 0 auto 8px; }
+        div { color: #000 !important; }
+        @page { margin: 5mm; }
+      </style></head><body>${clone.innerHTML}</body></html>`);
+      doc.close();
+      // Wait for content to render then print
+      iframe.onload = () => {
+        iframe.contentWindow.focus();
+        iframe.contentWindow.print();
+        setTimeout(() => document.body.removeChild(iframe), 2000);
+      };
+      // Fallback if onload doesn't fire
+      setTimeout(() => {
+        try {
+          iframe.contentWindow.focus();
+          iframe.contentWindow.print();
+        } catch(e) {}
+        setTimeout(() => { try { document.body.removeChild(iframe); } catch(e) {} }, 2000);
+      }, 500);
+    });
   }, []);
 
   // Auto-print receipt on default printer (silent)
