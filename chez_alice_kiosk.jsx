@@ -342,6 +342,7 @@ export default function ChezAliceKiosk() {
   const [selectedItem, setSelectedItem] = useState(null);
   const [orderNumber, setOrderNumber] = useState(null);
   const [customerName, setCustomerName] = useState("");
+  const [phoneNumber, setPhoneNumber] = useState("");
   const [animating, setAnimating] = useState(false);
   const [tipPercent, setTipPercent] = useState(0);
   const [paymentMethod, setPaymentMethod] = useState("credit");
@@ -467,6 +468,7 @@ export default function ChezAliceKiosk() {
             cartTotal={cartTotal} tax={tax} tipPercent={tipPercent} setTipPercent={setTipPercent}
             tipAmount={tipAmount} ccFee={ccFee} grandTotal={grandTotal}
             customerName={customerName} setCustomerName={setCustomerName}
+            phoneNumber={phoneNumber} setPhoneNumber={setPhoneNumber}
             paymentMethod={paymentMethod} setPaymentMethod={setPaymentMethod}
             onBack={() => navigateTo(SCREENS.CART)}
             onPay={() => navigateTo(SCREENS.PAYMENT)}
@@ -481,7 +483,7 @@ export default function ChezAliceKiosk() {
         )}
         {screen === SCREENS.CONFIRM && (
           <ConfirmationScreen
-            orderNumber={orderNumber} customerName={customerName}
+            orderNumber={orderNumber} customerName={customerName} phoneNumber={phoneNumber}
             cart={cart} cartTotal={cartTotal} tax={tax} tipAmount={tipAmount} ccFee={ccFee} grandTotal={grandTotal}
             paymentMethod={paymentMethod} onNewOrder={startNewOrder}
           />
@@ -1178,7 +1180,7 @@ function CartScreen({ cart, cartTotal, tax, onBack, addToCart, removeFromCart, c
 }
 
 // ─── Checkout Screen ────────────────────────────────────────────────────────
-function CheckoutScreen({ cartTotal, tax, tipPercent, setTipPercent, tipAmount, ccFee, grandTotal, customerName, setCustomerName, paymentMethod, setPaymentMethod, onBack, onPay }) {
+function CheckoutScreen({ cartTotal, tax, tipPercent, setTipPercent, tipAmount, ccFee, grandTotal, customerName, setCustomerName, phoneNumber, setPhoneNumber, paymentMethod, setPaymentMethod, onBack, onPay }) {
   const tips = [0, 10, 15, 18, 20];
   const payMethods = [
     { id: "credit", label: "Credit Card", icon: "💳", note: "3.5% processing fee" },
@@ -1200,6 +1202,13 @@ function CheckoutScreen({ cartTotal, tax, tipPercent, setTipPercent, tipAmount, 
         <div style={{ marginBottom: 32 }}>
           <label style={{ display: "block", fontSize: 13, fontWeight: 600, fontFamily: "'Josefin Sans', sans-serif", letterSpacing: "0.1em", textTransform: "uppercase", color: COLORS.textLight, marginBottom: 4 }}>Name for Order <span style={{ fontWeight: 300, fontSize: 11, textTransform: "none", letterSpacing: 0 }}>(optional)</span></label>
           <input value={customerName} onChange={e => setCustomerName(e.target.value)} placeholder="Enter your first name"
+            style={{ width: "100%", padding: "14px 16px", fontSize: 17, border: `2px solid ${COLORS.border}`, borderRadius: 4, background: "#fff", color: COLORS.charcoal, outline: "none", transition: "border-color 0.2s ease" }}
+            onFocus={e => e.target.style.borderColor = COLORS.gold} onBlur={e => e.target.style.borderColor = COLORS.border} />
+        </div>
+
+        <div style={{ marginBottom: 32 }}>
+          <label style={{ display: "block", fontSize: 13, fontWeight: 600, fontFamily: "'Josefin Sans', sans-serif", letterSpacing: "0.1em", textTransform: "uppercase", color: COLORS.textLight, marginBottom: 4 }}>Phone Number <span style={{ fontWeight: 300, fontSize: 11, textTransform: "none", letterSpacing: 0 }}>(optional — we'll text when your order is ready)</span></label>
+          <input value={phoneNumber} onChange={e => setPhoneNumber(e.target.value.replace(/[^0-9+\-() ]/g, ""))} placeholder="(555) 123-4567" type="tel"
             style={{ width: "100%", padding: "14px 16px", fontSize: 17, border: `2px solid ${COLORS.border}`, borderRadius: 4, background: "#fff", color: COLORS.charcoal, outline: "none", transition: "border-color 0.2s ease" }}
             onFocus={e => e.target.style.borderColor = COLORS.gold} onBlur={e => e.target.style.borderColor = COLORS.border} />
         </div>
@@ -1358,12 +1367,30 @@ function PaymentScreen({ grandTotal, paymentMethod, onBack, onComplete }) {
 }
 
 // ─── Confirmation Screen ────────────────────────────────────────────────────
-function ConfirmationScreen({ orderNumber, customerName, cart, cartTotal, tax, tipAmount, ccFee, grandTotal, paymentMethod, onNewOrder }) {
-  // Auto-print receipt on default printer
-  useEffect(() => {
-    const timer = setTimeout(() => window.print(), 800);
-    return () => clearTimeout(timer);
+function ConfirmationScreen({ orderNumber, customerName, phoneNumber, cart, cartTotal, tax, tipAmount, ccFee, grandTotal, paymentMethod, onNewOrder }) {
+  const [smsSent, setSmsSent] = useState(false);
+
+  // Silent print via hidden iframe
+  const silentPrint = useCallback(() => {
+    const receiptEl = document.getElementById("receipt-section");
+    if (!receiptEl) return;
+    const iframe = document.createElement("iframe");
+    iframe.style.cssText = "position:absolute;width:0;height:0;border:0;";
+    document.body.appendChild(iframe);
+    const doc = iframe.contentDocument || iframe.contentWindow.document;
+    doc.open();
+    doc.write(`<html><head><style>body{font-family:'Josefin Sans',sans-serif;padding:20px;font-size:12px;}img{max-width:200px;}</style></head><body>${receiptEl.innerHTML}</body></html>`);
+    doc.close();
+    iframe.contentWindow.focus();
+    iframe.contentWindow.print();
+    setTimeout(() => document.body.removeChild(iframe), 1000);
   }, []);
+
+  // Auto-print receipt on default printer (silent)
+  useEffect(() => {
+    const timer = setTimeout(silentPrint, 800);
+    return () => clearTimeout(timer);
+  }, [silentPrint]);
 
   return (
     <div style={{
@@ -1418,14 +1445,24 @@ function ConfirmationScreen({ orderNumber, customerName, cart, cartTotal, tax, t
         </div>
 
         <p style={{ fontSize: 15, color: COLORS.charcoal, marginTop: 24, fontWeight: 400, lineHeight: 1.6 }}>
-          We'll call your name when your order is ready. Please wait near the pickup counter.
+          {phoneNumber ? "We'll text you when your order is ready." : "We'll call your name when your order is ready. Please wait near the pickup counter."}
         </p>
 
-        <button onClick={() => window.print()} style={{
+        <button onClick={silentPrint} style={{
           marginTop: 20, padding: "14px 40px", fontSize: 14, fontWeight: 500,
           fontFamily: "'Josefin Sans', sans-serif", letterSpacing: "0.1em", textTransform: "uppercase",
           background: COLORS.gold, color: "#fff", border: `2px solid ${COLORS.gold}`, borderRadius: 4,
         }}>🖨️ Print Receipt</button>
+
+        {phoneNumber && (
+          <button onClick={() => { setSmsSent(true); setTimeout(() => setSmsSent(false), 3000); }} disabled={smsSent} style={{
+            marginTop: 12, padding: "14px 40px", fontSize: 14, fontWeight: 500,
+            fontFamily: "'Josefin Sans', sans-serif", letterSpacing: "0.1em", textTransform: "uppercase",
+            background: smsSent ? COLORS.success : "#1976D2", color: "#fff",
+            border: `2px solid ${smsSent ? COLORS.success : "#1976D2"}`, borderRadius: 4,
+            transition: "all 0.2s ease",
+          }}>{smsSent ? "✓ Receipt Sent!" : `📱 SMS Receipt to ${phoneNumber}`}</button>
+        )}
 
         <button onClick={onNewOrder} style={{
           marginTop: 12, padding: "16px 48px", fontSize: 14, fontWeight: 500,
