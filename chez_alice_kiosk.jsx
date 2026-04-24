@@ -306,6 +306,33 @@ const MENU = {
 };
 
 const MACARON_PRICES = { "½ Dozen": 16, "Dozen": 31, "Box of 15": 39 };
+const MACARON_TIER_COUNTS = { "½ Dozen": 6, "Dozen": 12, "Box of 15": 15 };
+
+// ─── Upsell Configuration ───────────────────────────────────────────────────
+// Categories that show upsell suggestions, and what to suggest
+const UPSELL_CONFIG = {
+  croissants: { drinks: true, desserts: true },
+  breakfast:  { drinks: true, desserts: true },
+  lunch:      { drinks: true, desserts: true },
+};
+
+// Curated upsell picks (ids reference items in MENU above)
+const UPSELL_DRINKS = [
+  { id: "bh1_sm", sourceId: "bh1", name: "Coffee (S)", price: 3.00, img: `${IMG}/bev_coffee.webp`, emoji: "☕" },
+  { id: "bh6_sm", sourceId: "bh6", name: "Latte (S)", price: 6.00, img: `${IMG}/bev_latte.webp`, emoji: "☕" },
+  { id: "bh5_sm", sourceId: "bh5", name: "Cappuccino (S)", price: 5.50, img: `${IMG}/bev_cappuccino.webp`, emoji: "☕" },
+  { id: "bc1_up", sourceId: "bc1", name: "Iced Coffee", price: 3.75, img: `${IMG}/bev_iced_coffee.webp`, emoji: "🧊" },
+  { id: "bc2_up", sourceId: "bc2", name: "Iced Latte", price: 4.50, img: `${IMG}/bev_iced_latte.webp`, emoji: "🧊" },
+  { id: "bc13_up", sourceId: "bc13", name: "Lemonade", price: 5.25, img: `${IMG}/bev_lemonade.webp`, emoji: "🍋" },
+];
+
+const UPSELL_DESSERTS = [
+  { id: "c2_up", sourceId: "c2", name: "Almond Croissant", price: 6.00, img: `${IMG}/cro_almond.webp`, emoji: "🥐" },
+  { id: "c5_up", sourceId: "c5", name: "Pistachio Croissant", price: 6.50, img: `${IMG}/cro_pistachio.webp`, emoji: "🥐" },
+  { id: "c4_up", sourceId: "c4", name: "Berry Croissant", price: 7.00, img: `${IMG}/cro_berry_croissant.webp`, emoji: "🥐" },
+  { id: "t1_up", sourceId: "t1", name: "Fresh Fruit Tartlet", price: 9.00, img: `${IMG}/tart_fresh_fruit.webp`, emoji: "🥧" },
+  { id: "m_half_up", sourceId: "m_upsell", name: "Macarons (½ Doz)", price: 16.00, img: `${IMG}/macaron_birthday_cake.webp`, emoji: "🌈" },
+];
 
 // ─── Color palette from Chez Alice ──────────────────────────────────────────
 const COLORS = {
@@ -331,6 +358,36 @@ const Flourish = () => (
   </svg>
 );
 
+// ─── Back Button ────────────────────────────────────────────────────────────
+function BackButton({ onClick, label = "Back", variant = "default" }) {
+  const isOverlay = variant === "overlay";
+  return (
+    <button onClick={onClick} style={{
+      display: "inline-flex", alignItems: "center", gap: 8,
+      padding: "12px 24px", borderRadius: 28,
+      background: isOverlay ? "rgba(0,0,0,0.45)" : "#fff",
+      border: isOverlay ? "none" : `1.5px solid ${COLORS.border}`,
+      color: isOverlay ? "#fff" : COLORS.gold,
+      fontSize: 16, fontWeight: 600, fontFamily: "'Josefin Sans', sans-serif",
+      letterSpacing: "0.04em", cursor: "pointer",
+      transition: "all 0.2s ease",
+      boxShadow: isOverlay ? "0 2px 8px rgba(0,0,0,0.3)" : "0 1px 4px rgba(0,0,0,0.06)",
+      zIndex: 10,
+    }}
+      onMouseEnter={e => {
+        if (isOverlay) { e.currentTarget.style.background = "rgba(0,0,0,0.6)"; }
+        else { e.currentTarget.style.background = COLORS.gold; e.currentTarget.style.color = "#fff"; e.currentTarget.style.borderColor = COLORS.gold; }
+      }}
+      onMouseLeave={e => {
+        if (isOverlay) { e.currentTarget.style.background = "rgba(0,0,0,0.45)"; }
+        else { e.currentTarget.style.background = "#fff"; e.currentTarget.style.color = COLORS.gold; e.currentTarget.style.borderColor = COLORS.border; }
+      }}
+    >
+      <span style={{ fontSize: 16, lineHeight: 1 }}>‹</span> {label}
+    </button>
+  );
+}
+
 // ─── Screens ────────────────────────────────────────────────────────────────
 const SCREENS = { WELCOME: 0, MENU: 1, ITEM: 2, CART: 3, CHECKOUT: 4, PAYMENT: 5, CONFIRM: 6 };
 
@@ -354,10 +411,10 @@ export default function ChezAliceKiosk() {
   }, []);
 
   const cartTotal = cart.reduce((s, i) => s + i.price * i.qty, 0);
-  const tipAmount = cartTotal * tipPercent / 100;
+  const tipAmount = 0;
   const tax = cartTotal * 0.06625;
-  const ccFee = paymentMethod === "credit" ? (cartTotal + tipAmount + tax) * 0.035 : 0;
-  const grandTotal = cartTotal + tipAmount + tax + ccFee;
+  const ccFee = paymentMethod === "credit" ? (cartTotal + tax) * 0.035 : 0;
+  const grandTotal = cartTotal + tax + ccFee;
   const cartCount = cart.reduce((s, i) => s + i.qty, 0);
 
   const addToCart = useCallback((item) => {
@@ -390,7 +447,7 @@ export default function ChezAliceKiosk() {
 
   const styles = {
     kiosk: {
-      width: "100%", minHeight: "100vh", background: COLORS.cream,
+      width: 1080, height: 1920, background: COLORS.cream,
       fontFamily: "'Cormorant Garamond', 'Playfair Display', 'Georgia', serif",
       color: COLORS.text, position: "relative", overflow: "hidden",
       display: "flex", flexDirection: "column",
@@ -427,8 +484,8 @@ export default function ChezAliceKiosk() {
       <div style={styles.fadeWrap}>
         {screen === SCREENS.WELCOME && <WelcomeScreen onStart={() => navigateTo(SCREENS.MENU)} />}
         {(screen === SCREENS.MENU || screen === SCREENS.ITEM) && (
-          <div style={{ flex: 1, display: "flex", overflow: "hidden" }}>
-            <div style={{ flex: 1, display: "flex", flexDirection: "column", overflow: "hidden" }}>
+          <div style={{ flex: 1, display: "flex" }}>
+            <div style={{ flex: 1, display: "flex", flexDirection: "column", overflow: "auto", marginRight: 360 }}>
               {screen === SCREENS.MENU && (
                 <MenuScreen
                   category={selectedCategory} setCategory={setSelectedCategory}
@@ -445,6 +502,7 @@ export default function ChezAliceKiosk() {
                   addToCart={addToCart}
                   onOpenCart={() => navigateTo(SCREENS.CART)}
                   cartCount={cartCount} cartTotal={cartTotal}
+                  onBrowseCategory={(cat) => { setSelectedCategory(cat); navigateTo(SCREENS.MENU); }}
                 />
               )}
             </div>
@@ -493,24 +551,25 @@ export default function ChezAliceKiosk() {
   );
 }
 
+// ─── Showcase items for welcome screen ──────────────────────────────────────
 // ─── Welcome Screen ─────────────────────────────────────────────────────────
 function WelcomeScreen({ onStart }) {
   return (
     <div style={{
       flex: 1, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center",
       background: `linear-gradient(180deg, ${COLORS.cream} 0%, ${COLORS.warmWhite} 50%, ${COLORS.cream} 100%)`,
-      padding: "40px 20px", textAlign: "center", minHeight: "100vh",
+      padding: "40px 20px", textAlign: "center", minHeight: "100vh", position: "relative", overflow: "hidden",
     }}>
       <div style={{ animation: "float 4s ease-in-out infinite" }}>
-        <img src="https://www.genesisglobalgrp.com/mods/images/logo_chez_alice.png" alt="Chez Alice" style={{ width: 320, maxWidth: "80%", marginBottom: 20 }}/>
+        <img src="https://www.genesisglobalgrp.com/mods/images/logo_chez_alice.png" alt="Chez Alice" style={{ width: 420, maxWidth: "80%", marginBottom: 28 }}/>
       </div>
       <Flourish />
-      <h1 style={{ fontSize: 42, fontWeight: 300, color: COLORS.charcoal, marginTop: 24, letterSpacing: "0.04em", lineHeight: 1.2 }}>Bienvenue</h1>
-      <p style={{ fontSize: 17, color: COLORS.textLight, marginTop: 12, maxWidth: 380, fontFamily: "'Josefin Sans', sans-serif", fontWeight: 300, lineHeight: 1.6, letterSpacing: "0.02em" }}>
+      <h1 style={{ fontSize: 56, fontWeight: 300, color: COLORS.charcoal, marginTop: 32, letterSpacing: "0.04em", lineHeight: 1.2 }}>Bienvenue</h1>
+      <p style={{ fontSize: 22, color: COLORS.textLight, marginTop: 16, maxWidth: 500, fontFamily: "'Josefin Sans', sans-serif", fontWeight: 300, lineHeight: 1.6, letterSpacing: "0.02em" }}>
         Artisanal French pastries, coffee & cuisine<br/>in the heart of Princeton
       </p>
       <button onClick={onStart} style={{
-        marginTop: 48, padding: "18px 64px", fontSize: 18, fontWeight: 500,
+        marginTop: 64, padding: "24px 80px", fontSize: 24, fontWeight: 500,
         fontFamily: "'Josefin Sans', sans-serif", letterSpacing: "0.12em", textTransform: "uppercase",
         background: COLORS.gold, color: "#fff", borderRadius: 0, border: `2px solid ${COLORS.gold}`,
         transition: "all 0.3s ease",
@@ -518,7 +577,7 @@ function WelcomeScreen({ onStart }) {
         onMouseEnter={e => { e.target.style.background = "transparent"; e.target.style.color = COLORS.gold; }}
         onMouseLeave={e => { e.target.style.background = COLORS.gold; e.target.style.color = "#fff"; }}
       >Touch to Order</button>
-      <p style={{ marginTop: 60, fontSize: 12, color: COLORS.textLight, fontFamily: "'Josefin Sans', sans-serif", fontWeight: 300, letterSpacing: "0.08em", textTransform: "uppercase" }}>
+      <p style={{ marginTop: 80, fontSize: 15, color: COLORS.textLight, fontFamily: "'Josefin Sans', sans-serif", fontWeight: 300, letterSpacing: "0.08em", textTransform: "uppercase" }}>
         14-16 Witherspoon Street · Princeton, NJ
       </p>
     </div>
@@ -537,19 +596,19 @@ function HeaderBar({ cartCount, cartTotal, onOpenCart, title }) {
   return (
     <div style={{
       display: "flex", alignItems: "center", justifyContent: "space-between",
-      padding: "14px 24px", background: COLORS.warmWhite,
+      padding: "16px 28px", background: COLORS.warmWhite,
       borderBottom: `1px solid ${COLORS.border}`, position: "sticky", top: 0, zIndex: 50,
     }}>
-      <img src="https://www.genesisglobalgrp.com/mods/images/logo_chez_alice.png" alt="Chez Alice" style={{ height: 72, objectFit: "contain" }}/>
-      {title && <span style={{ fontSize: 16, fontWeight: 500, color: COLORS.charcoal, letterSpacing: "0.04em", fontFamily: "'Josefin Sans', sans-serif" }}>{title}</span>}
+      <img src="https://www.genesisglobalgrp.com/mods/images/logo_chez_alice.png" alt="Chez Alice" style={{ height: 64, objectFit: "contain" }}/>
+      {title && <span style={{ fontSize: 18, fontWeight: 500, color: COLORS.charcoal, letterSpacing: "0.04em", fontFamily: "'Josefin Sans', sans-serif" }}>{title}</span>}
       <button onClick={onOpenCart} style={{
-        display: "flex", alignItems: "center", gap: 8, padding: "8px 16px",
-        background: cartCount > 0 ? COLORS.gold : "transparent", borderRadius: 24,
+        display: "flex", alignItems: "center", gap: 10, padding: "12px 20px",
+        background: cartCount > 0 ? COLORS.gold : "transparent", borderRadius: 28,
         color: cartCount > 0 ? "#fff" : COLORS.textLight, transition: "all 0.3s ease",
-        fontFamily: "'Josefin Sans', sans-serif", fontSize: 14, fontWeight: 500,
+        fontFamily: "'Josefin Sans', sans-serif", fontSize: 16, fontWeight: 500,
         animation: bouncing ? "cartBounce 0.4s ease" : "none",
       }}>
-        <span style={{ fontSize: 18 }}>🛒</span>
+        <span style={{ fontSize: 22 }}>🛒</span>
         {cartCount > 0 && <span>{cartCount} · ${cartTotal.toFixed(2)}</span>}
       </button>
     </div>
@@ -562,12 +621,12 @@ function CategoryNav({ selected, onSelect }) {
   return (
     <div style={{
       display: "flex", gap: 0, overflowX: "auto", background: COLORS.warmWhite,
-      borderBottom: `1px solid ${COLORS.border}`, position: "sticky", top: 69, zIndex: 40,
+      borderBottom: `1px solid ${COLORS.border}`, position: "sticky", top: 96, zIndex: 40,
       scrollbarWidth: "none",
     }}>
       {cats.map(([key, cat]) => (
         <button key={key} onClick={() => onSelect(key)} style={{
-          flex: "0 0 auto", padding: "14px 18px", fontSize: 13, fontWeight: selected === key ? 600 : 400,
+          flex: "0 0 auto", padding: "16px 16px", fontSize: 14, fontWeight: selected === key ? 600 : 400,
           fontFamily: "'Josefin Sans', sans-serif", letterSpacing: "0.05em", textTransform: "uppercase",
           color: selected === key ? COLORS.gold : COLORS.textLight, whiteSpace: "nowrap",
           borderBottom: selected === key ? `3px solid ${COLORS.gold}` : "3px solid transparent",
@@ -597,8 +656,8 @@ function MenuScreen({ category, setCategory, onSelectItem, cart, cartCount, cart
     <div style={{ flex: 1, display: "flex", flexDirection: "column" }}>
       <HeaderBar cartCount={cartCount} cartTotal={cartTotal} onOpenCart={onOpenCart} />
       <CategoryNav selected={category} onSelect={setCategory} />
-      <div style={{ flex: 1, overflowY: "auto", padding: "20px 16px 100px" }}>
-        <h2 style={{ fontSize: 32, fontWeight: 300, color: COLORS.charcoal, marginBottom: 8, paddingLeft: 8 }}>
+      <div style={{ flex: 1, overflowY: "auto", padding: "24px 20px 120px" }}>
+        <h2 style={{ fontSize: 36, fontWeight: 300, color: COLORS.charcoal, marginBottom: 10, paddingLeft: 8 }}>
           {MENU[category]?.label}
         </h2>
         <div style={{ paddingLeft: 8, marginBottom: 20 }}><Flourish /></div>
@@ -606,13 +665,13 @@ function MenuScreen({ category, setCategory, onSelectItem, cart, cartCount, cart
           <div key={group.section || gi}>
             {group.section && (
               <h3 style={{
-                fontSize: 20, fontWeight: 400, color: COLORS.gold, marginTop: gi > 0 ? 32 : 0,
-                marginBottom: 16, paddingLeft: 8, paddingBottom: 8,
+                fontSize: 22, fontWeight: 400, color: COLORS.gold, marginTop: gi > 0 ? 36 : 0,
+                marginBottom: 18, paddingLeft: 8, paddingBottom: 10,
                 borderBottom: `1px solid ${COLORS.border}`,
                 fontFamily: "'Cormorant Garamond', serif", letterSpacing: "0.03em",
               }}>{group.section}</h3>
             )}
-            <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(260px, 1fr))", gap: 16 }}>
+            <div style={{ display: "grid", gridTemplateColumns: "repeat(2, 1fr)", gap: 18 }}>
               {group.items.map((item, i) => (
                 <MenuCard key={item.id} item={item} index={i} onSelect={() => onSelectItem(item)} addToCart={addToCart} />
               ))}
@@ -644,22 +703,22 @@ function MenuCard({ item, index, onSelect, addToCart }) {
       }}
     >
       {item.img && !imgError ? (
-        <div style={{ width: "100%", height: 180, overflow: "hidden", background: COLORS.cream }}>
+        <div style={{ width: "100%", aspectRatio: "16/10", overflow: "hidden", background: COLORS.cream, position: "relative" }}>
           <img src={item.img} alt={item.name} onError={() => setImgError(true)}
-            style={{ width: "100%", height: "100%", objectFit: "cover", transition: "transform 0.4s ease", transform: hovered ? "scale(1.05)" : "scale(1)" }} />
+            style={{ position: "absolute", top: 0, left: 0, width: "100%", height: "100%", objectFit: "cover", transition: "transform 0.4s ease", transform: hovered ? "scale(1.05)" : "scale(1)" }} />
         </div>
       ) : (
         <div style={{ height: 3, background: `linear-gradient(90deg, ${COLORS.gold}, ${COLORS.goldLight}, ${COLORS.gold})` }} />
       )}
-      <div style={{ padding: "16px 18px 14px" }}>
+      <div style={{ padding: "18px 20px 16px" }}>
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: 12 }}>
           <div style={{ flex: 1 }}>
-            <h3 style={{ fontSize: 18, fontWeight: 500, color: COLORS.charcoal, lineHeight: 1.25, marginBottom: 6 }}>{item.name}</h3>
+            <h3 style={{ fontSize: 20, fontWeight: 500, color: COLORS.charcoal, lineHeight: 1.25, marginBottom: 6 }}>{item.name}</h3>
             {item.tags && (
               <div style={{ display: "flex", gap: 4, marginBottom: 6, flexWrap: "wrap" }}>
                 {item.tags.map(t => (
                   <span key={t} style={{
-                    fontSize: 10, padding: "2px 6px", borderRadius: 2,
+                    fontSize: 11, padding: "3px 8px", borderRadius: 2,
                     background: t === "GF" ? "#E8F5E8" : t === "V" ? "#E8F0E8" : COLORS.rosePale,
                     color: t === "GF" ? COLORS.success : t === "V" ? COLORS.success : COLORS.rose,
                     fontFamily: "'Josefin Sans', sans-serif", fontWeight: 500, letterSpacing: "0.05em",
@@ -668,16 +727,16 @@ function MenuCard({ item, index, onSelect, addToCart }) {
               </div>
             )}
             <p style={{
-              fontSize: 13, color: COLORS.textLight, lineHeight: 1.5, fontFamily: "'Josefin Sans', sans-serif", fontWeight: 300,
+              fontSize: 14, color: COLORS.textLight, lineHeight: 1.5, fontFamily: "'Josefin Sans', sans-serif", fontWeight: 300,
               display: "-webkit-box", WebkitLineClamp: 2, WebkitBoxOrient: "vertical", overflow: "hidden",
             }}>{item.desc}</p>
           </div>
-          <span style={{ fontSize: 15, fontWeight: 600, color: COLORS.gold, whiteSpace: "nowrap", fontFamily: "'Josefin Sans', sans-serif" }}>{priceLabel}</span>
+          <span style={{ fontSize: 17, fontWeight: 600, color: COLORS.gold, whiteSpace: "nowrap", fontFamily: "'Josefin Sans', sans-serif" }}>{priceLabel}</span>
         </div>
-        <div style={{ marginTop: 12, display: "flex", gap: 8 }}>
+        <div style={{ marginTop: 14, display: "flex", gap: 10 }}>
           {!item.sizes && !item.macaron && (
             <button onClick={(e) => { e.stopPropagation(); addToCart({ ...item, cartKey: item.id }); }} style={{
-              flex: 1, padding: "10px", fontSize: 13, fontWeight: 500,
+              flex: 1, padding: "14px", fontSize: 15, fontWeight: 500,
               fontFamily: "'Josefin Sans', sans-serif", letterSpacing: "0.06em", textTransform: "uppercase",
               background: COLORS.gold, color: "#fff", borderRadius: 2, transition: "all 0.2s ease",
             }}
@@ -686,7 +745,7 @@ function MenuCard({ item, index, onSelect, addToCart }) {
             >Quick Add</button>
           )}
           <button onClick={onSelect} style={{
-            flex: 1, padding: "10px", fontSize: 13, fontWeight: 500,
+            flex: 1, padding: "14px", fontSize: 15, fontWeight: 500,
             fontFamily: "'Josefin Sans', sans-serif", letterSpacing: "0.06em", textTransform: "uppercase",
             background: "transparent", color: COLORS.gold, borderRadius: 2,
             border: `1px solid ${COLORS.gold}`, transition: "all 0.2s ease",
@@ -698,7 +757,7 @@ function MenuCard({ item, index, onSelect, addToCart }) {
 }
 
 // ─── Item Detail ────────────────────────────────────────────────────────────
-function ItemDetail({ item, onBack, addToCart, onOpenCart, cartCount, cartTotal }) {
+function ItemDetail({ item, onBack, addToCart, onOpenCart, cartCount, cartTotal, onBrowseCategory }) {
   const [selectedSize, setSelectedSize] = useState(item.sizes ? 0 : null);
   const [selectedAddons, setSelectedAddons] = useState([]);
   const [macaronQty, setMacaronQty] = useState("½ Dozen");
@@ -707,6 +766,58 @@ function ItemDetail({ item, onBack, addToCart, onOpenCart, cartCount, cartTotal 
   const [imgError, setImgError] = useState(false);
   const [showMods, setShowMods] = useState(false);
   const [itemNote, setItemNote] = useState("");
+  const [upsellAdded, setUpsellAdded] = useState({});
+  const [showMacaronPicker, setShowMacaronPicker] = useState(false);
+  const [macaronSelections, setMacaronSelections] = useState({});
+
+  // Determine item's category for upsell logic
+  const itemCategory = Object.keys(MENU).find(k => MENU[k].items.some(i => i.id === item.id));
+  const upsellCfg = UPSELL_CONFIG[itemCategory];
+  const upsellDrinks = upsellCfg?.drinks ? UPSELL_DRINKS : [];
+  const upsellDesserts = upsellCfg?.desserts ? UPSELL_DESSERTS.filter(d => d.sourceId !== item.id && !d.sourceId.startsWith(item.id)) : [];
+  const hasUpsells = upsellDrinks.length > 0 || upsellDesserts.length > 0;
+  const macaronFlavors = MENU.macarons?.items || [];
+  const macaronMaxCount = MACARON_TIER_COUNTS[macaronQty] || 6;
+  const macaronSelectedCount = Object.values(macaronSelections).reduce((s, n) => s + n, 0);
+
+  const handleUpsellAdd = (upsellItem) => {
+    // If it's the macaron upsell, open flavor picker instead of quick-adding
+    if (upsellItem.id === "m_half_up") {
+      setMacaronSelections({});
+      setShowMacaronPicker(true);
+      return;
+    }
+    addToCart({ id: upsellItem.sourceId, name: upsellItem.name, price: upsellItem.price, cartKey: upsellItem.id });
+    setUpsellAdded(prev => ({ ...prev, [upsellItem.id]: true }));
+    setTimeout(() => setUpsellAdded(prev => ({ ...prev, [upsellItem.id]: false })), 1200);
+  };
+
+  const handleMacaronFlavorTap = (flavor) => {
+    if (macaronSelectedCount >= macaronMaxCount) return;
+    setMacaronSelections(prev => ({ ...prev, [flavor.id]: (prev[flavor.id] || 0) + 1 }));
+  };
+
+  const handleMacaronFlavorRemove = (flavorId) => {
+    setMacaronSelections(prev => {
+      const count = (prev[flavorId] || 0) - 1;
+      if (count <= 0) { const { [flavorId]: _, ...rest } = prev; return rest; }
+      return { ...prev, [flavorId]: count };
+    });
+  };
+
+  const handleMacaronAddToCart = () => {
+    if (macaronSelectedCount !== macaronMaxCount) return;
+    const flavorNames = macaronFlavors
+      .filter(f => macaronSelections[f.id])
+      .map(f => macaronSelections[f.id] > 1 ? `${f.name} x${macaronSelections[f.id]}` : f.name)
+      .join(", ");
+    const cartKey = `macaron-upsell-${macaronQty}-${Date.now()}`;
+    addToCart({ id: "macaron_box", name: `Macarons ${macaronQty}`, price: MACARON_PRICES[macaronQty], cartKey, variant: flavorNames });
+    setShowMacaronPicker(false);
+    setMacaronSelections({});
+    setUpsellAdded(prev => ({ ...prev, "m_half_up": true }));
+    setTimeout(() => setUpsellAdded(prev => ({ ...prev, "m_half_up": false })), 1200);
+  };
 
   const resolvedAddons = item.addons || resolveModifiers(item.modifierGroups);
   const hasGroupedAddons = resolvedAddons && resolvedAddons.some(a => a.group);
@@ -743,44 +854,41 @@ function ItemDetail({ item, onBack, addToCart, onOpenCart, cartCount, cartTotal 
   return (
     <div style={{ flex: 1, display: "flex", flexDirection: "column" }}>
       <HeaderBar cartCount={cartCount} cartTotal={cartTotal} onOpenCart={onOpenCart} />
-      <div style={{ flex: 1, overflowY: "auto", padding: "0 0 100px" }}>
+      <div style={{ flex: 1, overflowY: "auto", padding: "0 0 120px" }}>
         <div style={{
           background: `linear-gradient(135deg, ${COLORS.rosePale} 0%, ${COLORS.cream} 100%)`,
-          padding: item.img && !imgError ? "0" : "40px 24px", textAlign: "center", position: "relative",
+          padding: item.img && !imgError ? "0" : "48px 28px", textAlign: "center", position: "relative",
         }}>
-          <button onClick={onBack} style={{
-            position: "absolute", left: 20, top: 20, fontSize: 14,
-            color: item.img && !imgError ? "#fff" : COLORS.gold,
-            fontFamily: "'Josefin Sans', sans-serif", fontWeight: 500, letterSpacing: "0.06em",
-            zIndex: 10, textShadow: item.img && !imgError ? "0 1px 4px rgba(0,0,0,0.5)" : "none",
-          }}>← Back</button>
+          <div style={{ position: "absolute", left: 20, top: 20, zIndex: 10 }}>
+            <BackButton onClick={onBack} label="Menu" variant={item.img && !imgError ? "overlay" : "default"} />
+          </div>
           {item.img && !imgError ? (
-            <div style={{ width: "100%", height: 300, overflow: "hidden" }}>
+            <div style={{ width: "100%", height: 400, overflow: "hidden", position: "relative" }}>
               <img src={item.img} alt={item.name} onError={() => setImgError(true)}
-                style={{ width: "100%", height: "100%", objectFit: "cover" }} />
+                style={{ position: "absolute", top: 0, left: 0, width: "100%", height: "100%", objectFit: "cover" }} />
               <div style={{
-                position: "absolute", bottom: 0, left: 0, right: 0, padding: "60px 24px 24px",
+                position: "absolute", bottom: 0, left: 0, right: 0, padding: "80px 28px 28px",
                 background: "linear-gradient(transparent, rgba(0,0,0,0.6))",
               }}>
-                <h1 style={{ fontSize: 32, fontWeight: 400, color: "#fff", marginBottom: 4 }}>{item.name}</h1>
+                <h1 style={{ fontSize: 36, fontWeight: 400, color: "#fff", marginBottom: 4 }}>{item.name}</h1>
               </div>
             </div>
           ) : (
             <>
-              <div style={{ fontSize: 56, marginBottom: 12 }}>{MENU[Object.keys(MENU).find(k => MENU[k].items.find(i => i.id === item.id))]?.icon}</div>
-              <h1 style={{ fontSize: 36, fontWeight: 400, color: COLORS.charcoal, marginBottom: 8 }}>{item.name}</h1>
+              <div style={{ fontSize: 64, marginBottom: 16 }}>{MENU[Object.keys(MENU).find(k => MENU[k].items.find(i => i.id === item.id))]?.icon}</div>
+              <h1 style={{ fontSize: 40, fontWeight: 400, color: COLORS.charcoal, marginBottom: 8 }}>{item.name}</h1>
             </>
           )}
         </div>
 
-        <div style={{ padding: "24px 24px" }}>
+        <div style={{ padding: "28px 28px" }}>
           {(!item.img || imgError) && <Flourish />}
-          <p style={{ fontSize: 15, color: COLORS.textLight, marginTop: 12, maxWidth: 400, fontFamily: "'Josefin Sans', sans-serif", fontWeight: 300, lineHeight: 1.6 }}>{item.desc}</p>
+          <p style={{ fontSize: 17, color: COLORS.textLight, marginTop: 14, maxWidth: 500, fontFamily: "'Josefin Sans', sans-serif", fontWeight: 300, lineHeight: 1.6 }}>{item.desc}</p>
           {item.tags && (
-            <div style={{ display: "flex", gap: 6, marginTop: 12, flexWrap: "wrap" }}>
+            <div style={{ display: "flex", gap: 8, marginTop: 14, flexWrap: "wrap" }}>
               {item.tags.map(t => (
                 <span key={t} style={{
-                  fontSize: 11, padding: "3px 10px", borderRadius: 2,
+                  fontSize: 13, padding: "4px 12px", borderRadius: 2,
                   background: t === "GF" ? "#E8F5E8" : t === "V" ? "#E8F0E8" : COLORS.rosePale,
                   color: t === "GF" ? COLORS.success : t === "V" ? COLORS.success : COLORS.rose,
                   fontFamily: "'Josefin Sans', sans-serif", fontWeight: 500,
@@ -790,17 +898,17 @@ function ItemDetail({ item, onBack, addToCart, onOpenCart, cartCount, cartTotal 
           )}
 
           {item.sizes && (
-            <div style={{ marginTop: 28, marginBottom: 28 }}>
-              <h3 style={{ fontSize: 13, fontWeight: 600, fontFamily: "'Josefin Sans', sans-serif", letterSpacing: "0.1em", textTransform: "uppercase", color: COLORS.textLight, marginBottom: 12 }}>Select Size</h3>
-              <div style={{ display: "flex", gap: 12 }}>
+            <div style={{ marginTop: 32, marginBottom: 32 }}>
+              <h3 style={{ fontSize: 15, fontWeight: 600, fontFamily: "'Josefin Sans', sans-serif", letterSpacing: "0.1em", textTransform: "uppercase", color: COLORS.textLight, marginBottom: 14 }}>Select Size</h3>
+              <div style={{ display: "flex", gap: 14 }}>
                 {item.sizes.map((s, i) => (
                   <button key={i} onClick={() => setSelectedSize(i)} style={{
-                    flex: 1, padding: "16px", textAlign: "center", borderRadius: 4,
+                    flex: 1, padding: "20px", textAlign: "center", borderRadius: 4,
                     border: `2px solid ${selectedSize === i ? COLORS.gold : COLORS.border}`,
                     background: selectedSize === i ? "rgba(197,162,88,0.06)" : "#fff", transition: "all 0.2s ease",
                   }}>
-                    <div style={{ fontSize: 16, fontWeight: 500, color: COLORS.charcoal }}>{s.label}</div>
-                    <div style={{ fontSize: 15, fontWeight: 600, color: COLORS.gold, marginTop: 4, fontFamily: "'Josefin Sans', sans-serif" }}>${s.price.toFixed(2)}</div>
+                    <div style={{ fontSize: 18, fontWeight: 500, color: COLORS.charcoal }}>{s.label}</div>
+                    <div style={{ fontSize: 17, fontWeight: 600, color: COLORS.gold, marginTop: 6, fontFamily: "'Josefin Sans', sans-serif" }}>${s.price.toFixed(2)}</div>
                   </button>
                 ))}
               </div>
@@ -808,8 +916,8 @@ function ItemDetail({ item, onBack, addToCart, onOpenCart, cartCount, cartTotal 
           )}
 
           {item.macaron && (
-            <div style={{ marginTop: 28, marginBottom: 28 }}>
-              <h3 style={{ fontSize: 13, fontWeight: 600, fontFamily: "'Josefin Sans', sans-serif", letterSpacing: "0.1em", textTransform: "uppercase", color: COLORS.textLight, marginBottom: 12 }}>Select Quantity</h3>
+            <div style={{ marginTop: 32, marginBottom: 32 }}>
+              <h3 style={{ fontSize: 15, fontWeight: 600, fontFamily: "'Josefin Sans', sans-serif", letterSpacing: "0.1em", textTransform: "uppercase", color: COLORS.textLight, marginBottom: 14 }}>Select Quantity</h3>
               <div style={{ display: "flex", gap: 12 }}>
                 {Object.entries(MACARON_PRICES).map(([label, price]) => (
                   <button key={label} onClick={() => setMacaronQty(label)} style={{
@@ -987,26 +1095,259 @@ function ItemDetail({ item, onBack, addToCart, onOpenCart, cartCount, cartTotal 
             );
           })()}
 
-          <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 24, marginBottom: 28 }}>
+          <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 28, marginBottom: 32 }}>
             <button onClick={() => setQty(Math.max(1, qty - 1))} style={{
-              width: 44, height: 44, borderRadius: "50%", border: `2px solid ${COLORS.border}`,
-              fontSize: 20, color: COLORS.charcoal, display: "flex", alignItems: "center", justifyContent: "center", background: "#fff",
+              width: 52, height: 52, borderRadius: "50%", border: `2px solid ${COLORS.border}`,
+              fontSize: 24, color: COLORS.charcoal, display: "flex", alignItems: "center", justifyContent: "center", background: "#fff",
             }}>−</button>
-            <span style={{ fontSize: 28, fontWeight: 500, color: COLORS.charcoal, minWidth: 40, textAlign: "center" }}>{qty}</span>
+            <span style={{ fontSize: 32, fontWeight: 500, color: COLORS.charcoal, minWidth: 48, textAlign: "center" }}>{qty}</span>
             <button onClick={() => setQty(qty + 1)} style={{
-              width: 44, height: 44, borderRadius: "50%", border: `2px solid ${COLORS.gold}`,
-              fontSize: 20, color: COLORS.gold, display: "flex", alignItems: "center", justifyContent: "center",
+              width: 52, height: 52, borderRadius: "50%", border: `2px solid ${COLORS.gold}`,
+              fontSize: 24, color: COLORS.gold, display: "flex", alignItems: "center", justifyContent: "center",
               background: "rgba(197,162,88,0.06)",
             }}>+</button>
           </div>
 
           <button onClick={handleAdd} style={{
-            width: "100%", padding: "18px", fontSize: 16, fontWeight: 600,
+            width: "100%", padding: "22px", fontSize: 18, fontWeight: 600,
             fontFamily: "'Josefin Sans', sans-serif", letterSpacing: "0.08em", textTransform: "uppercase",
             background: added ? COLORS.success : COLORS.gold, color: "#fff", borderRadius: 4, transition: "all 0.3s ease",
           }}>
             {added ? "✓ Added to Order!" : `Add to Order · $${(getPrice() * qty).toFixed(2)}`}
           </button>
+
+          {/* ── Upsell Suggestions ── */}
+          {hasUpsells && (
+            <div style={{ marginTop: 36 }}>
+              <div style={{ textAlign: "center", marginBottom: 16 }}>
+                <Flourish />
+                <h3 style={{ fontSize: 13, fontWeight: 600, fontFamily: "'Josefin Sans', sans-serif", letterSpacing: "0.1em", textTransform: "uppercase", color: COLORS.textLight, marginTop: 10 }}>Complete Your Order</h3>
+              </div>
+
+              {upsellDrinks.length > 0 && (
+                <div style={{ marginBottom: 20 }}>
+                  <h4 style={{ fontSize: 12, fontWeight: 500, fontFamily: "'Josefin Sans', sans-serif", letterSpacing: "0.06em", textTransform: "uppercase", color: COLORS.gold, marginBottom: 10 }}>☕ Add a Drink</h4>
+                  <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 14, justifyContent: "center" }}>
+                    {upsellDrinks.map(u => {
+                      const isAdded = upsellAdded[u.id];
+                      return (
+                        <button key={u.id} onClick={() => handleUpsellAdd(u)} style={{
+                          display: "flex", flexDirection: "column", alignItems: "center",
+                          padding: 0, borderRadius: 8, overflow: "hidden",
+                          border: `2px solid ${isAdded ? COLORS.success : COLORS.border}`,
+                          background: isAdded ? "rgba(90,143,90,0.08)" : "#fff",
+                          transition: "all 0.2s ease", textAlign: "center", cursor: "pointer",
+                        }}>
+                          {u.img && (
+                            <div style={{ width: "100%", aspectRatio: "1/1", overflow: "hidden", background: COLORS.cream }}>
+                              <img src={u.img} alt={u.name} style={{ display: "block", width: "100%", height: "100%", objectFit: "cover" }} />
+                            </div>
+                          )}
+                          <div style={{ padding: "10px 8px 12px" }}>
+                            <span style={{ fontSize: 14, fontWeight: 500, color: isAdded ? COLORS.success : COLORS.charcoal, lineHeight: 1.2, display: "block" }}>
+                              {isAdded ? "✓ Added" : u.name}
+                            </span>
+                            {!isAdded && <span style={{ fontSize: 13, fontWeight: 600, color: COLORS.gold, marginTop: 4, fontFamily: "'Josefin Sans', sans-serif", display: "block" }}>${u.price.toFixed(2)}</span>}
+                          </div>
+                        </button>
+                      );
+                    })}
+                  </div>
+                  {onBrowseCategory && (
+                    <button onClick={() => onBrowseCategory("beveragesHot")} style={{
+                      display: "flex", alignItems: "center", justifyContent: "center", gap: 6,
+                      width: "100%", marginTop: 10, padding: "12px", borderRadius: 8,
+                      border: `1.5px solid ${COLORS.gold}`, background: "transparent",
+                      color: COLORS.gold, fontSize: 13, fontWeight: 600,
+                      fontFamily: "'Josefin Sans', sans-serif", letterSpacing: "0.06em",
+                      cursor: "pointer", transition: "all 0.2s ease",
+                    }}
+                      onMouseEnter={e => { e.currentTarget.style.background = COLORS.gold; e.currentTarget.style.color = "#fff"; }}
+                      onMouseLeave={e => { e.currentTarget.style.background = "transparent"; e.currentTarget.style.color = COLORS.gold; }}
+                    >More Drinks →</button>
+                  )}
+                </div>
+              )}
+
+              {upsellDesserts.length > 0 && (
+                <div style={{ marginBottom: 20 }}>
+                  <h4 style={{ fontSize: 12, fontWeight: 500, fontFamily: "'Josefin Sans', sans-serif", letterSpacing: "0.06em", textTransform: "uppercase", color: COLORS.gold, marginBottom: 10 }}>🍰 Add a Treat</h4>
+                  <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 14, justifyContent: "center" }}>
+                    {upsellDesserts.map(u => {
+                      const isAdded = upsellAdded[u.id];
+                      return (
+                        <button key={u.id} onClick={() => handleUpsellAdd(u)} style={{
+                          display: "flex", flexDirection: "column", alignItems: "center",
+                          padding: 0, borderRadius: 8, overflow: "hidden",
+                          border: `2px solid ${isAdded ? COLORS.success : COLORS.border}`,
+                          background: isAdded ? "rgba(90,143,90,0.08)" : "#fff",
+                          transition: "all 0.2s ease", textAlign: "center", cursor: "pointer",
+                        }}>
+                          {u.img && (
+                            <div style={{ width: "100%", aspectRatio: "1/1", overflow: "hidden", background: COLORS.cream }}>
+                              <img src={u.img} alt={u.name} style={{ display: "block", width: "100%", height: "100%", objectFit: "cover" }} />
+                            </div>
+                          )}
+                          <div style={{ padding: "10px 8px 12px" }}>
+                            <span style={{ fontSize: 14, fontWeight: 500, color: isAdded ? COLORS.success : COLORS.charcoal, lineHeight: 1.2, display: "block" }}>
+                              {isAdded ? "✓ Added" : u.name}
+                            </span>
+                            {!isAdded && <span style={{ fontSize: 13, fontWeight: 600, color: COLORS.gold, marginTop: 4, fontFamily: "'Josefin Sans', sans-serif", display: "block" }}>${u.price.toFixed(2)}</span>}
+                          </div>
+                        </button>
+                      );
+                    })}
+                  </div>
+                  {onBrowseCategory && (
+                    <div style={{ display: "flex", gap: 8, marginTop: 10 }}>
+                      <button onClick={() => onBrowseCategory("patisserie")} style={{
+                        flex: 1, display: "flex", alignItems: "center", justifyContent: "center", gap: 6,
+                        padding: "12px", borderRadius: 8,
+                        border: `1.5px solid ${COLORS.gold}`, background: "transparent",
+                        color: COLORS.gold, fontSize: 13, fontWeight: 600,
+                        fontFamily: "'Josefin Sans', sans-serif", letterSpacing: "0.06em",
+                        cursor: "pointer", transition: "all 0.2s ease",
+                      }}
+                        onMouseEnter={e => { e.currentTarget.style.background = COLORS.gold; e.currentTarget.style.color = "#fff"; }}
+                        onMouseLeave={e => { e.currentTarget.style.background = "transparent"; e.currentTarget.style.color = COLORS.gold; }}
+                      >Pâtisserie →</button>
+                      <button onClick={() => onBrowseCategory("tarts")} style={{
+                        flex: 1, display: "flex", alignItems: "center", justifyContent: "center", gap: 6,
+                        padding: "12px", borderRadius: 8,
+                        border: `1.5px solid ${COLORS.gold}`, background: "transparent",
+                        color: COLORS.gold, fontSize: 13, fontWeight: 600,
+                        fontFamily: "'Josefin Sans', sans-serif", letterSpacing: "0.06em",
+                        cursor: "pointer", transition: "all 0.2s ease",
+                      }}
+                        onMouseEnter={e => { e.currentTarget.style.background = COLORS.gold; e.currentTarget.style.color = "#fff"; }}
+                        onMouseLeave={e => { e.currentTarget.style.background = "transparent"; e.currentTarget.style.color = COLORS.gold; }}
+                      >Tartlets →</button>
+                      <button onClick={() => onBrowseCategory("macarons")} style={{
+                        flex: 1, display: "flex", alignItems: "center", justifyContent: "center", gap: 6,
+                        padding: "12px", borderRadius: 8,
+                        border: `1.5px solid ${COLORS.gold}`, background: "transparent",
+                        color: COLORS.gold, fontSize: 13, fontWeight: 600,
+                        fontFamily: "'Josefin Sans', sans-serif", letterSpacing: "0.06em",
+                        cursor: "pointer", transition: "all 0.2s ease",
+                      }}
+                        onMouseEnter={e => { e.currentTarget.style.background = COLORS.gold; e.currentTarget.style.color = "#fff"; }}
+                        onMouseLeave={e => { e.currentTarget.style.background = "transparent"; e.currentTarget.style.color = COLORS.gold; }}
+                      >Macarons →</button>
+                    </div>
+                  )}
+                </div>
+              )}
+            </div>
+          )}
+
+          {/* ── Macaron Flavor Picker Modal ── */}
+          {showMacaronPicker && (
+            <div style={{
+              position: "fixed", top: 0, left: 0, right: 0, bottom: 0,
+              background: "rgba(0,0,0,0.5)", zIndex: 1000,
+              display: "flex", alignItems: "center", justifyContent: "center",
+            }} onClick={() => setShowMacaronPicker(false)}>
+              <div onClick={e => e.stopPropagation()} style={{
+                background: "#fff", borderRadius: 12, padding: "28px 24px 20px",
+                maxWidth: 600, width: "92%", maxHeight: "85vh", overflowY: "auto",
+                boxShadow: "0 20px 60px rgba(0,0,0,0.3)",
+              }}>
+                <div style={{ textAlign: "center", marginBottom: 16 }}>
+                  <h2 style={{ fontSize: 22, fontWeight: 400, color: COLORS.charcoal, marginBottom: 4 }}>Choose Macaron Flavors</h2>
+                  <Flourish />
+                </div>
+
+                {/* Quantity tier selector */}
+                <div style={{ display: "flex", gap: 8, marginBottom: 16, justifyContent: "center" }}>
+                  {Object.entries(MACARON_PRICES).map(([label, price]) => (
+                    <button key={label} onClick={() => { setMacaronQty(label); setMacaronSelections({}); }} style={{
+                      padding: "8px 16px", borderRadius: 20,
+                      border: `2px solid ${macaronQty === label ? COLORS.gold : COLORS.border}`,
+                      background: macaronQty === label ? "rgba(197,162,88,0.08)" : "#fff",
+                      color: macaronQty === label ? COLORS.gold : COLORS.charcoal,
+                      fontSize: 13, fontWeight: 600, fontFamily: "'Josefin Sans', sans-serif",
+                      cursor: "pointer", transition: "all 0.2s ease",
+                    }}>
+                      {label} · ${price}
+                    </button>
+                  ))}
+                </div>
+
+                {/* Selection counter */}
+                <div style={{
+                  textAlign: "center", marginBottom: 16, padding: "10px 16px",
+                  background: macaronSelectedCount === macaronMaxCount ? "rgba(90,143,90,0.08)" : "rgba(197,162,88,0.06)",
+                  borderRadius: 8, border: `1px solid ${macaronSelectedCount === macaronMaxCount ? COLORS.success : COLORS.border}`,
+                }}>
+                  <span style={{
+                    fontSize: 15, fontWeight: 600, fontFamily: "'Josefin Sans', sans-serif",
+                    color: macaronSelectedCount === macaronMaxCount ? COLORS.success : COLORS.charcoal,
+                  }}>
+                    {macaronSelectedCount} / {macaronMaxCount} selected
+                  </span>
+                  {macaronSelectedCount < macaronMaxCount && (
+                    <span style={{ fontSize: 12, color: COLORS.textLight, fontFamily: "'Josefin Sans', sans-serif", marginLeft: 8 }}>
+                      — pick {macaronMaxCount - macaronSelectedCount} more
+                    </span>
+                  )}
+                </div>
+
+                <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 10 }}>
+                  {macaronFlavors.map(flavor => {
+                    const count = macaronSelections[flavor.id] || 0;
+                    const isFull = macaronSelectedCount >= macaronMaxCount;
+                    return (
+                      <div key={flavor.id} style={{
+                        display: "flex", flexDirection: "column", alignItems: "center",
+                        padding: "8px 6px", borderRadius: 8,
+                        border: `2px solid ${count > 0 ? COLORS.gold : COLORS.border}`,
+                        background: count > 0 ? "rgba(197,162,88,0.06)" : "#fff",
+                        transition: "all 0.2s ease", textAlign: "center",
+                        overflow: "hidden", opacity: isFull && count === 0 ? 0.45 : 1,
+                      }}>
+                        {flavor.img && (
+                          <div style={{ width: "100%", aspectRatio: "1/1", borderRadius: 6, overflow: "hidden", marginBottom: 4, cursor: isFull && count === 0 ? "default" : "pointer" }}
+                            onClick={() => handleMacaronFlavorTap(flavor)}>
+                            <img src={flavor.img} alt={flavor.name} style={{ display: "block", width: "100%", height: "100%", objectFit: "cover" }} />
+                          </div>
+                        )}
+                        <span style={{ fontSize: 11, fontWeight: 500, color: COLORS.charcoal, lineHeight: 1.2, marginBottom: 4 }}>{flavor.name}</span>
+                        <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                          <button onClick={() => handleMacaronFlavorRemove(flavor.id)} disabled={count === 0} style={{
+                            width: 24, height: 24, borderRadius: "50%", border: `1px solid ${count > 0 ? COLORS.border : "#eee"}`,
+                            fontSize: 14, color: count > 0 ? COLORS.charcoal : "#ccc", background: "#fff",
+                            display: "flex", alignItems: "center", justifyContent: "center", cursor: count > 0 ? "pointer" : "default",
+                          }}>−</button>
+                          <span style={{ fontSize: 14, fontWeight: 600, color: count > 0 ? COLORS.gold : COLORS.textLight, minWidth: 16, textAlign: "center" }}>{count}</span>
+                          <button onClick={() => handleMacaronFlavorTap(flavor)} disabled={isFull} style={{
+                            width: 24, height: 24, borderRadius: "50%", border: `1px solid ${!isFull ? COLORS.gold : "#eee"}`,
+                            fontSize: 14, color: !isFull ? COLORS.gold : "#ccc", background: !isFull ? "rgba(197,162,88,0.06)" : "#fff",
+                            display: "flex", alignItems: "center", justifyContent: "center", cursor: !isFull ? "pointer" : "default",
+                          }}>+</button>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+
+                <button onClick={handleMacaronAddToCart} disabled={macaronSelectedCount !== macaronMaxCount} style={{
+                  display: "block", width: "100%", marginTop: 20, padding: "14px",
+                  fontSize: 14, fontWeight: 500, fontFamily: "'Josefin Sans', sans-serif",
+                  letterSpacing: "0.08em", textTransform: "uppercase",
+                  background: macaronSelectedCount === macaronMaxCount ? COLORS.gold : COLORS.border,
+                  color: "#fff", borderRadius: 6, border: "none",
+                  cursor: macaronSelectedCount === macaronMaxCount ? "pointer" : "default",
+                  opacity: macaronSelectedCount === macaronMaxCount ? 1 : 0.6,
+                  transition: "all 0.2s ease",
+                }}>
+                  {macaronSelectedCount === macaronMaxCount
+                    ? `Add to Order · $${MACARON_PRICES[macaronQty].toFixed(2)}`
+                    : `Select ${macaronMaxCount - macaronSelectedCount} More`}
+                </button>
+              </div>
+            </div>
+          )}
+
         </div>
       </div>
     </div>
@@ -1018,12 +1359,13 @@ function CartSidebar({ cart, cartTotal, tax, addToCart, removeFromCart, clearCar
   if (cart.length === 0) {
     return (
       <div style={{
-        width: 340, minWidth: 340, borderLeft: `1px solid ${COLORS.border}`, background: COLORS.warmWhite,
-        display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", padding: 24,
+        width: 360, borderLeft: `1px solid ${COLORS.border}`, background: COLORS.warmWhite,
+        display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", padding: 28,
+        position: "fixed", top: 0, right: 0, bottom: 0, zIndex: 100,
       }}>
-        <span style={{ fontSize: 48, marginBottom: 12 }}>🧺</span>
-        <h3 style={{ fontSize: 18, fontWeight: 300, color: COLORS.charcoal, marginBottom: 4 }}>Your Order</h3>
-        <p style={{ fontSize: 13, color: COLORS.textLight, fontFamily: "'Josefin Sans', sans-serif", fontWeight: 300, textAlign: "center" }}>
+        <span style={{ fontSize: 56, marginBottom: 14 }}>🧺</span>
+        <h3 style={{ fontSize: 20, fontWeight: 300, color: COLORS.charcoal, marginBottom: 6 }}>Your Order</h3>
+        <p style={{ fontSize: 15, color: COLORS.textLight, fontFamily: "'Josefin Sans', sans-serif", fontWeight: 300, textAlign: "center" }}>
           Add items from the menu to get started
         </p>
       </div>
@@ -1032,61 +1374,62 @@ function CartSidebar({ cart, cartTotal, tax, addToCart, removeFromCart, clearCar
 
   return (
     <div style={{
-      width: 340, minWidth: 340, borderLeft: `1px solid ${COLORS.border}`, background: COLORS.warmWhite,
+      width: 360, borderLeft: `1px solid ${COLORS.border}`, background: COLORS.warmWhite,
       display: "flex", flexDirection: "column",
+      position: "fixed", top: 0, right: 0, bottom: 0, zIndex: 100,
     }}>
       <div style={{
         display: "flex", alignItems: "center", justifyContent: "space-between",
-        padding: "12px 16px", borderBottom: `1px solid ${COLORS.border}`,
+        padding: "14px 18px", borderBottom: `1px solid ${COLORS.border}`,
       }}>
-        <h3 style={{ fontSize: 16, fontWeight: 400, color: COLORS.charcoal }}>Your Order ({cart.reduce((s, i) => s + i.qty, 0)})</h3>
-        <button onClick={clearCart} style={{ fontSize: 11, color: COLORS.danger, fontFamily: "'Josefin Sans', sans-serif", fontWeight: 500, letterSpacing: "0.06em", textTransform: "uppercase" }}>Clear</button>
+        <h3 style={{ fontSize: 18, fontWeight: 400, color: COLORS.charcoal }}>Your Order ({cart.reduce((s, i) => s + i.qty, 0)})</h3>
+        <button onClick={clearCart} style={{ fontSize: 13, color: COLORS.danger, fontFamily: "'Josefin Sans', sans-serif", fontWeight: 500, letterSpacing: "0.06em", textTransform: "uppercase" }}>Clear</button>
       </div>
-      <div style={{ flex: 1, overflowY: "auto", padding: "8px 16px" }}>
+      <div style={{ flex: 1, overflowY: "auto", padding: "10px 18px" }}>
         {cart.map((item, i) => (
           <div key={item.cartKey} style={{
-            padding: "10px 0", borderBottom: i < cart.length - 1 ? `1px solid ${COLORS.border}` : "none",
+            padding: "12px 0", borderBottom: i < cart.length - 1 ? `1px solid ${COLORS.border}` : "none",
           }}>
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: 8 }}>
               <div style={{ flex: 1, minWidth: 0 }}>
-                <div style={{ fontSize: 14, fontWeight: 500, color: COLORS.charcoal, lineHeight: 1.3 }}>{item.name}</div>
-                {item.variant && <div style={{ fontSize: 11, color: COLORS.textLight, marginTop: 2, fontFamily: "'Josefin Sans', sans-serif", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{item.variant}</div>}
+                <div style={{ fontSize: 16, fontWeight: 500, color: COLORS.charcoal, lineHeight: 1.3 }}>{item.name}</div>
+                {item.variant && <div style={{ fontSize: 12, color: COLORS.textLight, marginTop: 2, fontFamily: "'Josefin Sans', sans-serif", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{item.variant}</div>}
               </div>
-              <span style={{ fontSize: 13, fontWeight: 600, color: COLORS.gold, whiteSpace: "nowrap", fontFamily: "'Josefin Sans', sans-serif" }}>
+              <span style={{ fontSize: 15, fontWeight: 600, color: COLORS.gold, whiteSpace: "nowrap", fontFamily: "'Josefin Sans', sans-serif" }}>
                 ${(item.price * item.qty).toFixed(2)}
               </span>
             </div>
-            <div style={{ display: "flex", alignItems: "center", gap: 8, marginTop: 6 }}>
+            <div style={{ display: "flex", alignItems: "center", gap: 10, marginTop: 8 }}>
               <button onClick={() => removeFromCart(item.cartKey)} style={{
-                width: 26, height: 26, borderRadius: "50%", border: `1px solid ${COLORS.border}`,
-                fontSize: 14, color: COLORS.charcoal, background: "#fff",
+                width: 32, height: 32, borderRadius: "50%", border: `1px solid ${COLORS.border}`,
+                fontSize: 16, color: COLORS.charcoal, background: "#fff",
                 display: "flex", alignItems: "center", justifyContent: "center",
               }}>−</button>
-              <span style={{ fontSize: 14, fontWeight: 500, minWidth: 20, textAlign: "center" }}>{item.qty}</span>
+              <span style={{ fontSize: 16, fontWeight: 500, minWidth: 22, textAlign: "center" }}>{item.qty}</span>
               <button onClick={() => addToCart({ ...item })} style={{
-                width: 26, height: 26, borderRadius: "50%", border: `1px solid ${COLORS.gold}`,
-                fontSize: 14, color: COLORS.gold, background: "rgba(197,162,88,0.06)",
+                width: 32, height: 32, borderRadius: "50%", border: `1px solid ${COLORS.gold}`,
+                fontSize: 16, color: COLORS.gold, background: "rgba(197,162,88,0.06)",
                 display: "flex", alignItems: "center", justifyContent: "center",
               }}>+</button>
             </div>
           </div>
         ))}
       </div>
-      <div style={{ padding: "12px 16px", borderTop: `1px solid ${COLORS.border}` }}>
-        <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 4 }}>
-          <span style={{ fontSize: 12, color: COLORS.textLight, fontFamily: "'Josefin Sans', sans-serif" }}>Subtotal</span>
-          <span style={{ fontSize: 12, fontWeight: 500, fontFamily: "'Josefin Sans', sans-serif" }}>${cartTotal.toFixed(2)}</span>
+      <div style={{ padding: "14px 18px", borderTop: `1px solid ${COLORS.border}` }}>
+        <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 6 }}>
+          <span style={{ fontSize: 14, color: COLORS.textLight, fontFamily: "'Josefin Sans', sans-serif" }}>Subtotal</span>
+          <span style={{ fontSize: 14, fontWeight: 500, fontFamily: "'Josefin Sans', sans-serif" }}>${cartTotal.toFixed(2)}</span>
         </div>
-        <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 8 }}>
-          <span style={{ fontSize: 12, color: COLORS.textLight, fontFamily: "'Josefin Sans', sans-serif" }}>Tax</span>
-          <span style={{ fontSize: 12, fontWeight: 500, fontFamily: "'Josefin Sans', sans-serif" }}>${tax.toFixed(2)}</span>
+        <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 10 }}>
+          <span style={{ fontSize: 14, color: COLORS.textLight, fontFamily: "'Josefin Sans', sans-serif" }}>Tax</span>
+          <span style={{ fontSize: 14, fontWeight: 500, fontFamily: "'Josefin Sans', sans-serif" }}>${tax.toFixed(2)}</span>
         </div>
-        <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 12, paddingTop: 8, borderTop: `1px solid ${COLORS.border}` }}>
-          <span style={{ fontSize: 16, fontWeight: 500, color: COLORS.charcoal }}>Total</span>
-          <span style={{ fontSize: 16, fontWeight: 600, color: COLORS.gold, fontFamily: "'Josefin Sans', sans-serif" }}>${(cartTotal + tax).toFixed(2)}</span>
+        <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 14, paddingTop: 10, borderTop: `1px solid ${COLORS.border}` }}>
+          <span style={{ fontSize: 18, fontWeight: 500, color: COLORS.charcoal }}>Total</span>
+          <span style={{ fontSize: 18, fontWeight: 600, color: COLORS.gold, fontFamily: "'Josefin Sans', sans-serif" }}>${(cartTotal + tax).toFixed(2)}</span>
         </div>
         <button onClick={onCheckout} style={{
-          width: "100%", padding: "14px", fontSize: 13, fontWeight: 600,
+          width: "100%", padding: "16px", fontSize: 15, fontWeight: 600,
           fontFamily: "'Josefin Sans', sans-serif", letterSpacing: "0.08em", textTransform: "uppercase",
           background: COLORS.gold, color: "#fff", borderRadius: 4, transition: "all 0.2s ease",
         }}>Checkout</button>
@@ -1099,14 +1442,14 @@ function CartSidebar({ cart, cartTotal, tax, addToCart, removeFromCart, clearCar
 function CartScreen({ cart, cartTotal, tax, onBack, addToCart, removeFromCart, clearCart, onCheckout }) {
   if (cart.length === 0) {
     return (
-      <div style={{ flex: 1, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", padding: 40 }}>
-        <img src="https://www.genesisglobalgrp.com/mods/images/logo_chez_alice.png" alt="Chez Alice" style={{ width: 240, maxWidth: "70%", objectFit: "contain", marginBottom: 24 }}/>
-        <span style={{ fontSize: 64, marginBottom: 20 }}>🧺</span>
-        <h2 style={{ fontSize: 28, fontWeight: 300, color: COLORS.charcoal, marginBottom: 8 }}>Your Order is Empty</h2>
+      <div style={{ flex: 1, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", padding: 48 }}>
+        <img src="https://www.genesisglobalgrp.com/mods/images/logo_chez_alice.png" alt="Chez Alice" style={{ width: 300, maxWidth: "70%", objectFit: "contain", marginBottom: 28 }}/>
+        <span style={{ fontSize: 72, marginBottom: 24 }}>🧺</span>
+        <h2 style={{ fontSize: 34, fontWeight: 300, color: COLORS.charcoal, marginBottom: 10 }}>Your Order is Empty</h2>
         <Flourish />
-        <p style={{ fontSize: 15, color: COLORS.textLight, marginTop: 12, fontFamily: "'Josefin Sans', sans-serif", fontWeight: 300 }}>Browse our menu to start your order</p>
+        <p style={{ fontSize: 18, color: COLORS.textLight, marginTop: 14, fontFamily: "'Josefin Sans', sans-serif", fontWeight: 300 }}>Browse our menu to start your order</p>
         <button onClick={onBack} style={{
-          marginTop: 32, padding: "14px 48px", fontSize: 14, fontWeight: 500,
+          marginTop: 40, padding: "18px 56px", fontSize: 17, fontWeight: 500,
           fontFamily: "'Josefin Sans', sans-serif", letterSpacing: "0.1em", textTransform: "uppercase",
           background: COLORS.gold, color: "#fff", borderRadius: 2,
         }}>Browse Menu</button>
@@ -1118,13 +1461,13 @@ function CartScreen({ cart, cartTotal, tax, onBack, addToCart, removeFromCart, c
     <div style={{ flex: 1, display: "flex", flexDirection: "column" }}>
       <div style={{
         display: "flex", alignItems: "center", justifyContent: "space-between",
-        padding: "14px 24px", borderBottom: `1px solid ${COLORS.border}`, background: COLORS.warmWhite,
+        padding: "16px 28px", borderBottom: `1px solid ${COLORS.border}`, background: COLORS.warmWhite,
       }}>
-        <button onClick={onBack} style={{ fontSize: 14, color: COLORS.gold, fontFamily: "'Josefin Sans', sans-serif", fontWeight: 500 }}>← Menu</button>
-        <img src="https://www.genesisglobalgrp.com/mods/images/logo_chez_alice.png" alt="Chez Alice" style={{ height: 72, objectFit: "contain" }}/>
-        <button onClick={clearCart} style={{ fontSize: 12, color: COLORS.danger, fontFamily: "'Josefin Sans', sans-serif", fontWeight: 500, letterSpacing: "0.06em", textTransform: "uppercase" }}>Clear All</button>
+        <BackButton onClick={onBack} label="Menu" />
+        <img src="https://www.genesisglobalgrp.com/mods/images/logo_chez_alice.png" alt="Chez Alice" style={{ height: 64, objectFit: "contain" }}/>
+        <button onClick={clearCart} style={{ fontSize: 14, color: COLORS.danger, fontFamily: "'Josefin Sans', sans-serif", fontWeight: 500, letterSpacing: "0.06em", textTransform: "uppercase" }}>Clear All</button>
       </div>
-      <div style={{ flex: 1, overflowY: "auto", padding: "16px 24px" }}>
+      <div style={{ flex: 1, overflowY: "auto", padding: "20px 28px" }}>
         {cart.map((item, i) => (
           <div key={item.cartKey} style={{
             display: "flex", alignItems: "center", justifyContent: "space-between",
@@ -1132,23 +1475,23 @@ function CartScreen({ cart, cartTotal, tax, onBack, addToCart, removeFromCart, c
             animation: `slideUp 0.3s ease ${i * 0.05}s both`,
           }}>
             <div style={{ flex: 1 }}>
-              <div style={{ fontSize: 17, fontWeight: 500, color: COLORS.charcoal }}>{item.name}</div>
-              {item.variant && <div style={{ fontSize: 12, color: COLORS.textLight, marginTop: 2, fontFamily: "'Josefin Sans', sans-serif" }}>{item.variant}</div>}
-              <div style={{ fontSize: 14, fontWeight: 600, color: COLORS.gold, marginTop: 4, fontFamily: "'Josefin Sans', sans-serif" }}>${item.price.toFixed(2)} each</div>
+              <div style={{ fontSize: 20, fontWeight: 500, color: COLORS.charcoal }}>{item.name}</div>
+              {item.variant && <div style={{ fontSize: 14, color: COLORS.textLight, marginTop: 3, fontFamily: "'Josefin Sans', sans-serif" }}>{item.variant}</div>}
+              <div style={{ fontSize: 16, fontWeight: 600, color: COLORS.gold, marginTop: 5, fontFamily: "'Josefin Sans', sans-serif" }}>${item.price.toFixed(2)} each</div>
             </div>
-            <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+            <div style={{ display: "flex", alignItems: "center", gap: 14 }}>
               <button onClick={() => removeFromCart(item.cartKey)} style={{
-                width: 32, height: 32, borderRadius: "50%", border: `1px solid ${COLORS.border}`,
-                fontSize: 16, color: COLORS.charcoal, background: "#fff",
+                width: 40, height: 40, borderRadius: "50%", border: `1px solid ${COLORS.border}`,
+                fontSize: 20, color: COLORS.charcoal, background: "#fff",
                 display: "flex", alignItems: "center", justifyContent: "center",
               }}>−</button>
-              <span style={{ fontSize: 17, fontWeight: 500, minWidth: 24, textAlign: "center" }}>{item.qty}</span>
+              <span style={{ fontSize: 20, fontWeight: 500, minWidth: 28, textAlign: "center" }}>{item.qty}</span>
               <button onClick={() => addToCart({ ...item })} style={{
-                width: 32, height: 32, borderRadius: "50%", border: `1px solid ${COLORS.gold}`,
-                fontSize: 16, color: COLORS.gold, background: "rgba(197,162,88,0.06)",
+                width: 40, height: 40, borderRadius: "50%", border: `1px solid ${COLORS.gold}`,
+                fontSize: 20, color: COLORS.gold, background: "rgba(197,162,88,0.06)",
                 display: "flex", alignItems: "center", justifyContent: "center",
               }}>+</button>
-              <span style={{ fontSize: 16, fontWeight: 600, color: COLORS.charcoal, minWidth: 60, textAlign: "right", fontFamily: "'Josefin Sans', sans-serif" }}>
+              <span style={{ fontSize: 19, fontWeight: 600, color: COLORS.charcoal, minWidth: 72, textAlign: "right", fontFamily: "'Josefin Sans', sans-serif" }}>
                 ${(item.price * item.qty).toFixed(2)}
               </span>
             </div>
@@ -1156,21 +1499,21 @@ function CartScreen({ cart, cartTotal, tax, onBack, addToCart, removeFromCart, c
         ))}
       </div>
 
-      <div style={{ padding: "20px 24px", borderTop: `1px solid ${COLORS.border}`, background: COLORS.warmWhite }}>
-        <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 8 }}>
-          <span style={{ fontSize: 14, color: COLORS.textLight, fontFamily: "'Josefin Sans', sans-serif" }}>Subtotal</span>
-          <span style={{ fontSize: 14, fontWeight: 500, fontFamily: "'Josefin Sans', sans-serif" }}>${cartTotal.toFixed(2)}</span>
+      <div style={{ padding: "24px 28px", borderTop: `1px solid ${COLORS.border}`, background: COLORS.warmWhite }}>
+        <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 10 }}>
+          <span style={{ fontSize: 16, color: COLORS.textLight, fontFamily: "'Josefin Sans', sans-serif" }}>Subtotal</span>
+          <span style={{ fontSize: 16, fontWeight: 500, fontFamily: "'Josefin Sans', sans-serif" }}>${cartTotal.toFixed(2)}</span>
         </div>
-        <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 16 }}>
-          <span style={{ fontSize: 14, color: COLORS.textLight, fontFamily: "'Josefin Sans', sans-serif" }}>Tax (6.625%)</span>
-          <span style={{ fontSize: 14, fontWeight: 500, fontFamily: "'Josefin Sans', sans-serif" }}>${tax.toFixed(2)}</span>
+        <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 20 }}>
+          <span style={{ fontSize: 16, color: COLORS.textLight, fontFamily: "'Josefin Sans', sans-serif" }}>Tax (6.625%)</span>
+          <span style={{ fontSize: 16, fontWeight: 500, fontFamily: "'Josefin Sans', sans-serif" }}>${tax.toFixed(2)}</span>
         </div>
-        <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 20, paddingTop: 12, borderTop: `1px solid ${COLORS.border}` }}>
-          <span style={{ fontSize: 20, fontWeight: 500, color: COLORS.charcoal }}>Total</span>
-          <span style={{ fontSize: 20, fontWeight: 600, color: COLORS.gold, fontFamily: "'Josefin Sans', sans-serif" }}>${(cartTotal + tax).toFixed(2)}</span>
+        <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 24, paddingTop: 14, borderTop: `1px solid ${COLORS.border}` }}>
+          <span style={{ fontSize: 24, fontWeight: 500, color: COLORS.charcoal }}>Total</span>
+          <span style={{ fontSize: 24, fontWeight: 600, color: COLORS.gold, fontFamily: "'Josefin Sans', sans-serif" }}>${(cartTotal + tax).toFixed(2)}</span>
         </div>
         <button onClick={onCheckout} style={{
-          width: "100%", padding: "18px", fontSize: 16, fontWeight: 600,
+          width: "100%", padding: "22px", fontSize: 18, fontWeight: 600,
           fontFamily: "'Josefin Sans', sans-serif", letterSpacing: "0.1em", textTransform: "uppercase",
           background: COLORS.gold, color: "#fff", borderRadius: 4, transition: "all 0.2s ease",
         }}>Proceed to Checkout</button>
@@ -1193,87 +1536,67 @@ function CheckoutScreen({ cartTotal, tax, tipPercent, setTipPercent, tipAmount, 
         display: "flex", alignItems: "center", justifyContent: "space-between",
         padding: "14px 24px", borderBottom: `1px solid ${COLORS.border}`, background: COLORS.warmWhite,
       }}>
-        <button onClick={onBack} style={{ fontSize: 14, color: COLORS.gold, fontFamily: "'Josefin Sans', sans-serif", fontWeight: 500 }}>← Cart</button>
-        <img src="https://www.genesisglobalgrp.com/mods/images/logo_chez_alice.png" alt="Chez Alice" style={{ height: 72, objectFit: "contain" }}/>
-        <div style={{ width: 60 }} />
+        <BackButton onClick={onBack} label="Cart" />
+        <img src="https://www.genesisglobalgrp.com/mods/images/logo_chez_alice.png" alt="Chez Alice" style={{ height: 64, objectFit: "contain" }}/>
+        <div style={{ width: 120 }} />
       </div>
 
-      <div style={{ flex: 1, overflowY: "auto", padding: "28px 24px" }}>
-        <div style={{ marginBottom: 32 }}>
-          <label style={{ display: "block", fontSize: 13, fontWeight: 600, fontFamily: "'Josefin Sans', sans-serif", letterSpacing: "0.1em", textTransform: "uppercase", color: COLORS.textLight, marginBottom: 4 }}>Name for Order <span style={{ fontWeight: 300, fontSize: 11, textTransform: "none", letterSpacing: 0 }}>(optional)</span></label>
+      <div style={{ flex: 1, overflowY: "auto", padding: "32px 28px" }}>
+        <div style={{ marginBottom: 36 }}>
+          <label style={{ display: "block", fontSize: 15, fontWeight: 600, fontFamily: "'Josefin Sans', sans-serif", letterSpacing: "0.1em", textTransform: "uppercase", color: COLORS.textLight, marginBottom: 6 }}>Name for Order <span style={{ fontWeight: 300, fontSize: 13, textTransform: "none", letterSpacing: 0 }}>(optional)</span></label>
           <input value={customerName} onChange={e => setCustomerName(e.target.value)} placeholder="Enter your first name"
-            style={{ width: "100%", padding: "14px 16px", fontSize: 17, border: `2px solid ${COLORS.border}`, borderRadius: 4, background: "#fff", color: COLORS.charcoal, outline: "none", transition: "border-color 0.2s ease" }}
+            style={{ width: "100%", padding: "18px 20px", fontSize: 20, border: `2px solid ${COLORS.border}`, borderRadius: 4, background: "#fff", color: COLORS.charcoal, outline: "none", transition: "border-color 0.2s ease" }}
             onFocus={e => e.target.style.borderColor = COLORS.gold} onBlur={e => e.target.style.borderColor = COLORS.border} />
         </div>
 
-        <div style={{ marginBottom: 32 }}>
-          <label style={{ display: "block", fontSize: 13, fontWeight: 600, fontFamily: "'Josefin Sans', sans-serif", letterSpacing: "0.1em", textTransform: "uppercase", color: COLORS.textLight, marginBottom: 4 }}>Phone Number <span style={{ fontWeight: 300, fontSize: 11, textTransform: "none", letterSpacing: 0 }}>(optional — we'll text when your order is ready)</span></label>
+        <div style={{ marginBottom: 36 }}>
+          <label style={{ display: "block", fontSize: 15, fontWeight: 600, fontFamily: "'Josefin Sans', sans-serif", letterSpacing: "0.1em", textTransform: "uppercase", color: COLORS.textLight, marginBottom: 6 }}>Phone Number <span style={{ fontWeight: 300, fontSize: 13, textTransform: "none", letterSpacing: 0 }}>(optional — we'll text when your order is ready)</span></label>
           <input value={phoneNumber} onChange={e => setPhoneNumber(e.target.value.replace(/[^0-9+\-() ]/g, ""))} placeholder="(555) 123-4567" type="tel"
-            style={{ width: "100%", padding: "14px 16px", fontSize: 17, border: `2px solid ${COLORS.border}`, borderRadius: 4, background: "#fff", color: COLORS.charcoal, outline: "none", transition: "border-color 0.2s ease" }}
+            style={{ width: "100%", padding: "18px 20px", fontSize: 20, border: `2px solid ${COLORS.border}`, borderRadius: 4, background: "#fff", color: COLORS.charcoal, outline: "none", transition: "border-color 0.2s ease" }}
             onFocus={e => e.target.style.borderColor = COLORS.gold} onBlur={e => e.target.style.borderColor = COLORS.border} />
         </div>
 
-        <div style={{ marginBottom: 32 }}>
-          <label style={{ display: "block", fontSize: 13, fontWeight: 600, fontFamily: "'Josefin Sans', sans-serif", letterSpacing: "0.1em", textTransform: "uppercase", color: COLORS.textLight, marginBottom: 10 }}>Payment Method</label>
-          <div style={{ display: "flex", gap: 12 }}>
+        <div style={{ marginBottom: 36 }}>
+          <label style={{ display: "block", fontSize: 15, fontWeight: 600, fontFamily: "'Josefin Sans', sans-serif", letterSpacing: "0.1em", textTransform: "uppercase", color: COLORS.textLight, marginBottom: 12 }}>Payment Method</label>
+          <div style={{ display: "flex", gap: 14 }}>
             {payMethods.map(m => (
               <button key={m.id} onClick={() => setPaymentMethod(m.id)} style={{
-                flex: 1, padding: "16px 12px", textAlign: "center", borderRadius: 4,
+                flex: 1, padding: "20px 14px", textAlign: "center", borderRadius: 4,
                 border: `2px solid ${paymentMethod === m.id ? COLORS.gold : COLORS.border}`,
                 background: paymentMethod === m.id ? "rgba(197,162,88,0.08)" : "#fff", transition: "all 0.2s ease",
               }}>
-                <div style={{ fontSize: 28, marginBottom: 6 }}>{m.icon}</div>
-                <div style={{ fontSize: 14, fontWeight: 600, color: paymentMethod === m.id ? COLORS.gold : COLORS.charcoal }}>{m.label}</div>
-                <div style={{ fontSize: 11, color: COLORS.textLight, marginTop: 4, fontFamily: "'Josefin Sans', sans-serif" }}>{m.note}</div>
+                <div style={{ fontSize: 32, marginBottom: 8 }}>{m.icon}</div>
+                <div style={{ fontSize: 16, fontWeight: 600, color: paymentMethod === m.id ? COLORS.gold : COLORS.charcoal }}>{m.label}</div>
+                <div style={{ fontSize: 13, color: COLORS.textLight, marginTop: 4, fontFamily: "'Josefin Sans', sans-serif" }}>{m.note}</div>
               </button>
             ))}
           </div>
         </div>
 
-        <div style={{ marginBottom: 32 }}>
-          <label style={{ display: "block", fontSize: 13, fontWeight: 600, fontFamily: "'Josefin Sans', sans-serif", letterSpacing: "0.1em", textTransform: "uppercase", color: COLORS.textLight, marginBottom: 10 }}>Add a Tip</label>
-          <div style={{ display: "flex", gap: 10 }}>
-            {tips.map(t => (
-              <button key={t} onClick={() => setTipPercent(t)} style={{
-                flex: 1, padding: "14px 8px", textAlign: "center", borderRadius: 4,
-                border: `2px solid ${tipPercent === t ? COLORS.gold : COLORS.border}`,
-                background: tipPercent === t ? "rgba(197,162,88,0.08)" : "#fff", transition: "all 0.2s ease",
-              }}>
-                <div style={{ fontSize: 16, fontWeight: 600, color: tipPercent === t ? COLORS.gold : COLORS.charcoal }}>{t === 0 ? "None" : `${t}%`}</div>
-                {t > 0 && <div style={{ fontSize: 12, color: COLORS.textLight, marginTop: 2, fontFamily: "'Josefin Sans', sans-serif" }}>${(cartTotal * t / 100).toFixed(2)}</div>}
-              </button>
-            ))}
+        <div style={{ background: "#fff", borderRadius: 4, border: `1px solid ${COLORS.border}`, padding: "24px" }}>
+          <h3 style={{ fontSize: 15, fontWeight: 600, fontFamily: "'Josefin Sans', sans-serif", letterSpacing: "0.1em", textTransform: "uppercase", color: COLORS.textLight, marginBottom: 18 }}>Order Summary</h3>
+          <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 10 }}>
+            <span style={{ color: COLORS.textLight, fontFamily: "'Josefin Sans', sans-serif", fontSize: 16 }}>Subtotal</span>
+            <span style={{ fontFamily: "'Josefin Sans', sans-serif", fontSize: 16, fontWeight: 500 }}>${cartTotal.toFixed(2)}</span>
           </div>
-        </div>
-
-        <div style={{ background: "#fff", borderRadius: 4, border: `1px solid ${COLORS.border}`, padding: "20px" }}>
-          <h3 style={{ fontSize: 13, fontWeight: 600, fontFamily: "'Josefin Sans', sans-serif", letterSpacing: "0.1em", textTransform: "uppercase", color: COLORS.textLight, marginBottom: 16 }}>Order Summary</h3>
-          <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 8 }}>
-            <span style={{ color: COLORS.textLight, fontFamily: "'Josefin Sans', sans-serif", fontSize: 14 }}>Subtotal</span>
-            <span style={{ fontFamily: "'Josefin Sans', sans-serif", fontSize: 14, fontWeight: 500 }}>${cartTotal.toFixed(2)}</span>
+          <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 10 }}>
+            <span style={{ color: COLORS.textLight, fontFamily: "'Josefin Sans', sans-serif", fontSize: 16 }}>Tax (6.625%)</span>
+            <span style={{ fontFamily: "'Josefin Sans', sans-serif", fontSize: 16, fontWeight: 500 }}>${tax.toFixed(2)}</span>
           </div>
-          <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 8 }}>
-            <span style={{ color: COLORS.textLight, fontFamily: "'Josefin Sans', sans-serif", fontSize: 14 }}>Tax (6.625%)</span>
-            <span style={{ fontFamily: "'Josefin Sans', sans-serif", fontSize: 14, fontWeight: 500 }}>${tax.toFixed(2)}</span>
-          </div>
-          {tipAmount > 0 && <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 8 }}>
-            <span style={{ color: COLORS.textLight, fontFamily: "'Josefin Sans', sans-serif", fontSize: 14 }}>Tip ({tipPercent}%)</span>
-            <span style={{ fontFamily: "'Josefin Sans', sans-serif", fontSize: 14, fontWeight: 500 }}>${tipAmount.toFixed(2)}</span>
+          {ccFee > 0 && <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 10 }}>
+            <span style={{ color: "#D32F2F", fontFamily: "'Josefin Sans', sans-serif", fontSize: 16 }}>Card Fee (3.5%)</span>
+            <span style={{ fontFamily: "'Josefin Sans', sans-serif", fontSize: 16, fontWeight: 500, color: "#D32F2F" }}>${ccFee.toFixed(2)}</span>
           </div>}
-          {ccFee > 0 && <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 8 }}>
-            <span style={{ color: "#D32F2F", fontFamily: "'Josefin Sans', sans-serif", fontSize: 14 }}>Card Fee (3.5%)</span>
-            <span style={{ fontFamily: "'Josefin Sans', sans-serif", fontSize: 14, fontWeight: 500, color: "#D32F2F" }}>${ccFee.toFixed(2)}</span>
-          </div>}
-          <div style={{ borderTop: `1px solid ${COLORS.border}`, marginTop: 12, paddingTop: 12, display: "flex", justifyContent: "space-between" }}>
-            <span style={{ fontSize: 20, fontWeight: 500, color: COLORS.charcoal }}>Total</span>
-            <span style={{ fontSize: 22, fontWeight: 600, color: COLORS.gold, fontFamily: "'Josefin Sans', sans-serif" }}>${grandTotal.toFixed(2)}</span>
+          <div style={{ borderTop: `1px solid ${COLORS.border}`, marginTop: 14, paddingTop: 14, display: "flex", justifyContent: "space-between" }}>
+            <span style={{ fontSize: 24, fontWeight: 500, color: COLORS.charcoal }}>Total</span>
+            <span style={{ fontSize: 26, fontWeight: 600, color: COLORS.gold, fontFamily: "'Josefin Sans', sans-serif" }}>${grandTotal.toFixed(2)}</span>
           </div>
         </div>
       </div>
 
-      <div style={{ padding: "20px 24px", borderTop: `1px solid ${COLORS.border}`, background: COLORS.warmWhite }}>
+      <div style={{ padding: "24px 28px", borderTop: `1px solid ${COLORS.border}`, background: COLORS.warmWhite }}>
         <button onClick={onPay} style={{
-          width: "100%", padding: "18px", fontSize: 16, fontWeight: 600,
+          width: "100%", padding: "22px", fontSize: 18, fontWeight: 600,
           fontFamily: "'Josefin Sans', sans-serif", letterSpacing: "0.1em", textTransform: "uppercase",
           background: COLORS.gold, color: "#fff", borderRadius: 4,
           transition: "all 0.2s ease",
@@ -1305,24 +1628,24 @@ function PaymentScreen({ grandTotal, paymentMethod, onBack, onComplete }) {
   };
 
   return (
-    <div style={{ flex: 1, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", padding: 40 }}>
+    <div style={{ flex: 1, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", padding: 48 }}>
       {!cardInserted ? (
         <>
-          <img src="https://www.genesisglobalgrp.com/mods/images/logo_chez_alice.png" alt="Chez Alice" style={{ width: 240, maxWidth: "70%", objectFit: "contain", marginBottom: 32 }}/>
-          <div style={{ fontSize: 72, marginBottom: 24 }}>{paymentMethod === "gift" ? "🎁" : "💳"}</div>
-          <h2 style={{ fontSize: 30, fontWeight: 300, color: COLORS.charcoal, marginBottom: 8 }}>
+          <img src="https://www.genesisglobalgrp.com/mods/images/logo_chez_alice.png" alt="Chez Alice" style={{ width: 300, maxWidth: "70%", objectFit: "contain", marginBottom: 40 }}/>
+          <div style={{ fontSize: 88, marginBottom: 28 }}>{paymentMethod === "gift" ? "🎁" : "💳"}</div>
+          <h2 style={{ fontSize: 36, fontWeight: 300, color: COLORS.charcoal, marginBottom: 10 }}>
             {paymentMethod === "gift" ? "Enter Gift Card" : "Insert or Tap Card"}
           </h2>
           <Flourish />
-          <p style={{ fontSize: 22, fontWeight: 600, color: COLORS.gold, marginTop: 20, fontFamily: "'Josefin Sans', sans-serif" }}>${grandTotal.toFixed(2)}</p>
+          <p style={{ fontSize: 28, fontWeight: 600, color: COLORS.gold, marginTop: 24, fontFamily: "'Josefin Sans', sans-serif" }}>${grandTotal.toFixed(2)}</p>
 
           {paymentMethod === "gift" ? (
-            <div style={{ marginTop: 24, width: "100%", maxWidth: 360, textAlign: "center" }}>
+            <div style={{ marginTop: 28, width: "100%", maxWidth: 440, textAlign: "center" }}>
               <input value={giftCode} onChange={e => setGiftCode(e.target.value)} placeholder="Enter gift card number"
-                style={{ width: "100%", padding: "14px 16px", fontSize: 17, border: `2px solid ${COLORS.border}`, borderRadius: 4, background: "#fff", color: COLORS.charcoal, outline: "none", textAlign: "center", letterSpacing: "0.1em", transition: "border-color 0.2s ease" }}
+                style={{ width: "100%", padding: "18px 20px", fontSize: 20, border: `2px solid ${COLORS.border}`, borderRadius: 4, background: "#fff", color: COLORS.charcoal, outline: "none", textAlign: "center", letterSpacing: "0.1em", transition: "border-color 0.2s ease" }}
                 onFocus={e => e.target.style.borderColor = COLORS.gold} onBlur={e => e.target.style.borderColor = COLORS.border} />
               <button onClick={handleGiftPay} disabled={!giftCode.trim()} style={{
-                marginTop: 20, padding: "20px 48px", fontSize: 15, fontWeight: 600, width: "100%",
+                marginTop: 24, padding: "22px 56px", fontSize: 18, fontWeight: 600, width: "100%",
                 fontFamily: "'Josefin Sans', sans-serif", letterSpacing: "0.08em", textTransform: "uppercase",
                 background: giftCode.trim() ? COLORS.gold : COLORS.border, color: "#fff", borderRadius: 4,
                 opacity: giftCode.trim() ? 1 : 0.6, transition: "all 0.2s ease",
@@ -1330,32 +1653,32 @@ function PaymentScreen({ grandTotal, paymentMethod, onBack, onComplete }) {
             </div>
           ) : (
             <>
-              <p style={{ fontSize: 14, color: COLORS.textLight, marginTop: 16, maxWidth: 300, textAlign: "center", fontFamily: "'Josefin Sans', sans-serif", fontWeight: 300, lineHeight: 1.6 }}>
+              <p style={{ fontSize: 17, color: COLORS.textLight, marginTop: 20, maxWidth: 400, textAlign: "center", fontFamily: "'Josefin Sans', sans-serif", fontWeight: 300, lineHeight: 1.6 }}>
                 Insert, tap, or swipe your credit or debit card on the reader below
               </p>
               <button onClick={handleInsertCard} style={{
-                marginTop: 40, padding: "20px 48px", fontSize: 15, fontWeight: 600,
+                marginTop: 48, padding: "24px 56px", fontSize: 18, fontWeight: 600,
                 fontFamily: "'Josefin Sans', sans-serif", letterSpacing: "0.08em", textTransform: "uppercase",
                 background: COLORS.gold, color: "#fff", borderRadius: 4, animation: "pulse 2s ease infinite",
               }}>Simulate Card Tap</button>
             </>
           )}
-          <button onClick={onBack} style={{ marginTop: 20, fontSize: 13, color: COLORS.textLight, fontFamily: "'Josefin Sans', sans-serif", fontWeight: 400, letterSpacing: "0.04em" }}>Cancel</button>
+          <div style={{ marginTop: 24 }}><BackButton onClick={onBack} label="Go Back" /></div>
         </>
       ) : (
         <>
           <div style={{
-            width: 80, height: 80, borderRadius: "50%",
-            border: `3px solid ${progress >= 100 ? COLORS.success : COLORS.gold}`,
+            width: 100, height: 100, borderRadius: "50%",
+            border: `4px solid ${progress >= 100 ? COLORS.success : COLORS.gold}`,
             display: "flex", alignItems: "center", justifyContent: "center",
-            fontSize: 36, transition: "border-color 0.3s ease", marginBottom: 24,
+            fontSize: 44, transition: "border-color 0.3s ease", marginBottom: 28,
           }}>{progress >= 100 ? "✓" : "⏳"}</div>
-          <h2 style={{ fontSize: 24, fontWeight: 300, color: COLORS.charcoal, marginBottom: 12 }}>
+          <h2 style={{ fontSize: 30, fontWeight: 300, color: COLORS.charcoal, marginBottom: 14 }}>
             {progress >= 100 ? "Payment Approved!" : "Processing Payment..."}
           </h2>
-          <div style={{ width: 240, height: 6, background: COLORS.border, borderRadius: 3, overflow: "hidden", marginTop: 8 }}>
+          <div style={{ width: 320, height: 8, background: COLORS.border, borderRadius: 4, overflow: "hidden", marginTop: 10 }}>
             <div style={{
-              width: `${progress}%`, height: "100%", borderRadius: 3,
+              width: `${progress}%`, height: "100%", borderRadius: 4,
               background: progress >= 100 ? COLORS.success : `linear-gradient(90deg, ${COLORS.gold}, ${COLORS.goldLight})`,
               transition: "width 0.3s ease",
             }} />
@@ -1436,68 +1759,65 @@ function ConfirmationScreen({ orderNumber, customerName, phoneNumber, cart, cart
   return (
     <div style={{
       flex: 1, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "flex-start",
-      padding: "40px 24px", overflowY: "auto",
+      padding: "48px 28px", overflowY: "auto",
       background: `linear-gradient(180deg, ${COLORS.cream} 0%, ${COLORS.warmWhite} 100%)`,
     }}>
-      <div style={{ animation: "slideUp 0.5s ease both", textAlign: "center", width: "100%", maxWidth: 420 }}>
-        <div style={{ fontSize: 56, marginBottom: 16 }}>🎉</div>
-        <h1 style={{ fontSize: 34, fontWeight: 300, color: COLORS.charcoal, marginBottom: 8 }}>Merci{customerName ? `, ${customerName}` : ""}!</h1>
+      <div style={{ animation: "slideUp 0.5s ease both", textAlign: "center", width: "100%", maxWidth: 560 }}>
+        <div style={{ fontSize: 64, marginBottom: 20 }}>🎉</div>
+        <h1 style={{ fontSize: 40, fontWeight: 300, color: COLORS.charcoal, marginBottom: 10 }}>Merci{customerName ? `, ${customerName}` : ""}!</h1>
         <Flourish />
-        <p style={{ fontSize: 15, color: COLORS.textLight, marginTop: 12, fontFamily: "'Josefin Sans', sans-serif", fontWeight: 300 }}>Your order has been placed successfully</p>
+        <p style={{ fontSize: 18, color: COLORS.textLight, marginTop: 14, fontFamily: "'Josefin Sans', sans-serif", fontWeight: 300 }}>Your order has been placed successfully</p>
 
-        <div style={{ marginTop: 28, padding: "24px", background: "#fff", borderRadius: 4, border: `2px solid ${COLORS.gold}` }}>
-          <div style={{ fontSize: 12, fontWeight: 600, fontFamily: "'Josefin Sans', sans-serif", letterSpacing: "0.15em", textTransform: "uppercase", color: COLORS.textLight }}>Order Number</div>
-          <div style={{ fontSize: 52, fontWeight: 600, color: COLORS.gold, fontFamily: "'Josefin Sans', sans-serif", marginTop: 4 }}>#{orderNumber}</div>
+        <div style={{ marginTop: 32, padding: "28px", background: "#fff", borderRadius: 4, border: `2px solid ${COLORS.gold}` }}>
+          <div style={{ fontSize: 14, fontWeight: 600, fontFamily: "'Josefin Sans', sans-serif", letterSpacing: "0.15em", textTransform: "uppercase", color: COLORS.textLight }}>Order Number</div>
+          <div style={{ fontSize: 64, fontWeight: 600, color: COLORS.gold, fontFamily: "'Josefin Sans', sans-serif", marginTop: 6 }}>#{orderNumber}</div>
         </div>
 
-        <div id="receipt-section" style={{ marginTop: 24, background: "#fff", borderRadius: 4, border: `1px solid ${COLORS.border}`, padding: "20px", textAlign: "left" }}>
-          <div style={{ borderBottom: `1px solid ${COLORS.border}`, paddingBottom: 12, marginBottom: 12 }}>
+        <div id="receipt-section" style={{ marginTop: 28, background: "#fff", borderRadius: 4, border: `1px solid ${COLORS.border}`, padding: "24px", textAlign: "left" }}>
+          <div style={{ borderBottom: `1px solid ${COLORS.border}`, paddingBottom: 14, marginBottom: 14 }}>
             <div style={{ textAlign: "center" }}>
-              <img src="https://www.genesisglobalgrp.com/mods/images/logo_chez_alice.png" alt="Chez Alice" style={{ width: 200, maxWidth: "70%", objectFit: "contain", marginBottom: 10 }}/>
-              <div style={{ fontSize: 11, color: COLORS.textLight, fontFamily: "'Josefin Sans', sans-serif" }}>14-16 Witherspoon St · Princeton, NJ</div>
+              <img src="https://www.genesisglobalgrp.com/mods/images/logo_chez_alice.png" alt="Chez Alice" style={{ width: 240, maxWidth: "70%", objectFit: "contain", marginBottom: 12 }}/>
+              <div style={{ fontSize: 13, color: COLORS.textLight, fontFamily: "'Josefin Sans', sans-serif" }}>14-16 Witherspoon St · Princeton, NJ</div>
             </div>
           </div>
           {cart.map(item => (
-            <div key={item.cartKey} style={{ display: "flex", justifyContent: "space-between", marginBottom: 6, fontSize: 13, fontFamily: "'Josefin Sans', sans-serif" }}>
+            <div key={item.cartKey} style={{ display: "flex", justifyContent: "space-between", marginBottom: 8, fontSize: 15, fontFamily: "'Josefin Sans', sans-serif" }}>
               <span style={{ color: COLORS.charcoal }}>{item.qty}× {item.name}{item.variant ? ` (${item.variant})` : ""}</span>
               <span style={{ fontWeight: 500, color: COLORS.charcoal }}>${(item.price * item.qty).toFixed(2)}</span>
             </div>
           ))}
-          <div style={{ borderTop: `1px solid ${COLORS.border}`, marginTop: 10, paddingTop: 10 }}>
-            <div style={{ display: "flex", justifyContent: "space-between", fontSize: 12, color: COLORS.textLight, fontFamily: "'Josefin Sans', sans-serif", marginBottom: 4 }}>
+          <div style={{ borderTop: `1px solid ${COLORS.border}`, marginTop: 12, paddingTop: 12 }}>
+            <div style={{ display: "flex", justifyContent: "space-between", fontSize: 14, color: COLORS.textLight, fontFamily: "'Josefin Sans', sans-serif", marginBottom: 6 }}>
               <span>Subtotal</span><span>${cartTotal.toFixed(2)}</span>
             </div>
-            <div style={{ display: "flex", justifyContent: "space-between", fontSize: 12, color: COLORS.textLight, fontFamily: "'Josefin Sans', sans-serif", marginBottom: 4 }}>
+            <div style={{ display: "flex", justifyContent: "space-between", fontSize: 14, color: COLORS.textLight, fontFamily: "'Josefin Sans', sans-serif", marginBottom: 6 }}>
               <span>Tax</span><span>${tax.toFixed(2)}</span>
             </div>
-            {tipAmount > 0 && <div style={{ display: "flex", justifyContent: "space-between", fontSize: 12, color: COLORS.textLight, fontFamily: "'Josefin Sans', sans-serif", marginBottom: 4 }}>
-              <span>Tip</span><span>${tipAmount.toFixed(2)}</span>
-            </div>}
-            {ccFee > 0 && <div style={{ display: "flex", justifyContent: "space-between", fontSize: 12, color: COLORS.textLight, fontFamily: "'Josefin Sans', sans-serif", marginBottom: 4 }}>
+            {ccFee > 0 && <div style={{ display: "flex", justifyContent: "space-between", fontSize: 14, color: COLORS.textLight, fontFamily: "'Josefin Sans', sans-serif", marginBottom: 6 }}>
               <span>Card Fee (3.5%)</span><span>${ccFee.toFixed(2)}</span>
             </div>}
-            <div style={{ display: "flex", justifyContent: "space-between", fontSize: 12, color: COLORS.textLight, fontFamily: "'Josefin Sans', sans-serif", marginBottom: 4 }}>
+            <div style={{ display: "flex", justifyContent: "space-between", fontSize: 14, color: COLORS.textLight, fontFamily: "'Josefin Sans', sans-serif", marginBottom: 6 }}>
               <span>Paid via</span><span>{paymentMethod === "gift" ? "Gift Card" : "Credit Card"}</span>
             </div>
-            <div style={{ display: "flex", justifyContent: "space-between", fontSize: 16, fontWeight: 600, color: COLORS.gold, fontFamily: "'Josefin Sans', sans-serif", marginTop: 8, paddingTop: 8, borderTop: `1px solid ${COLORS.border}` }}>
+            <div style={{ display: "flex", justifyContent: "space-between", fontSize: 18, fontWeight: 600, color: COLORS.gold, fontFamily: "'Josefin Sans', sans-serif", marginTop: 10, paddingTop: 10, borderTop: `1px solid ${COLORS.border}` }}>
               <span>Total Charged</span><span>${grandTotal.toFixed(2)}</span>
             </div>
           </div>
         </div>
 
-        <p style={{ fontSize: 15, color: COLORS.charcoal, marginTop: 24, fontWeight: 400, lineHeight: 1.6 }}>
+        <p style={{ fontSize: 17, color: COLORS.charcoal, marginTop: 28, fontWeight: 400, lineHeight: 1.6 }}>
           {phoneNumber ? "We'll text you when your order is ready." : "We'll call your name when your order is ready. Please wait near the pickup counter."}
         </p>
 
         <button onClick={silentPrint} style={{
-          marginTop: 20, padding: "14px 40px", fontSize: 14, fontWeight: 500,
+          marginTop: 24, padding: "18px 48px", fontSize: 16, fontWeight: 500,
           fontFamily: "'Josefin Sans', sans-serif", letterSpacing: "0.1em", textTransform: "uppercase",
           background: COLORS.gold, color: "#fff", border: `2px solid ${COLORS.gold}`, borderRadius: 4,
         }}>🖨️ Print Receipt</button>
 
         {phoneNumber && (
           <button onClick={() => { setSmsSent(true); setTimeout(() => setSmsSent(false), 3000); }} disabled={smsSent} style={{
-            marginTop: 12, padding: "14px 40px", fontSize: 14, fontWeight: 500,
+            marginTop: 14, padding: "18px 48px", fontSize: 16, fontWeight: 500,
             fontFamily: "'Josefin Sans', sans-serif", letterSpacing: "0.1em", textTransform: "uppercase",
             background: smsSent ? COLORS.success : "#1976D2", color: "#fff",
             border: `2px solid ${smsSent ? COLORS.success : "#1976D2"}`, borderRadius: 4,
@@ -1506,12 +1826,12 @@ function ConfirmationScreen({ orderNumber, customerName, phoneNumber, cart, cart
         )}
 
         <button onClick={onNewOrder} style={{
-          marginTop: 12, padding: "16px 48px", fontSize: 14, fontWeight: 500,
+          marginTop: 14, padding: "20px 56px", fontSize: 16, fontWeight: 500,
           fontFamily: "'Josefin Sans', sans-serif", letterSpacing: "0.1em", textTransform: "uppercase",
           background: "transparent", color: COLORS.gold, border: `2px solid ${COLORS.gold}`, borderRadius: 4,
         }}>Start New Order</button>
 
-        <p style={{ marginTop: 20, fontSize: 11, color: COLORS.textLight, fontFamily: "'Josefin Sans', sans-serif", fontWeight: 300 }}>
+        <p style={{ marginTop: 24, fontSize: 13, color: COLORS.textLight, fontFamily: "'Josefin Sans', sans-serif", fontWeight: 300 }}>
           Screen will reset automatically in 30 seconds
         </p>
       </div>

@@ -12,4 +12,6 @@ start "" "C:\Program Files\Google\Chrome\Application\chrome.exe" ^
   --disable-session-crashed-bubble ^
   --noerrdialogs ^
   --no-first-run ^
+  --window-size=1080,1920 ^
+  --window-position=0,0 ^
   http://localhost:8080
