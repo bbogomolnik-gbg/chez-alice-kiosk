@@ -454,6 +454,7 @@ export default function ChezAliceKiosk() {
     },
     fadeWrap: {
       flex: 1, display: "flex", flexDirection: "column",
+      minHeight: 0,
       opacity: animating ? 0 : 1, transform: animating ? "translateY(12px)" : "translateY(0)",
       transition: "opacity 0.25s ease, transform 0.25s ease",
     }
@@ -484,8 +485,8 @@ export default function ChezAliceKiosk() {
       <div style={styles.fadeWrap}>
         {screen === SCREENS.WELCOME && <WelcomeScreen onStart={() => navigateTo(SCREENS.MENU)} />}
         {(screen === SCREENS.MENU || screen === SCREENS.ITEM) && (
-          <div style={{ flex: 1, display: "flex" }}>
-            <div style={{ flex: 1, display: "flex", flexDirection: "column", overflow: "auto", marginRight: 360 }}>
+          <div style={{ flex: 1, display: "flex", minHeight: 0 }}>
+            <div style={{ flex: 1, display: "flex", flexDirection: "column", overflow: "hidden", minHeight: 0, marginRight: 360 }}>
               {screen === SCREENS.MENU && (
                 <MenuScreen
                   category={selectedCategory} setCategory={setSelectedCategory}
@@ -653,7 +654,7 @@ function MenuScreen({ category, setCategory, onSelectItem, cart, cartCount, cart
     : [{ section: null, items }];
 
   return (
-    <div style={{ flex: 1, display: "flex", flexDirection: "column" }}>
+    <div style={{ flex: 1, display: "flex", flexDirection: "column", minHeight: 0 }}>
       <HeaderBar cartCount={cartCount} cartTotal={cartTotal} onOpenCart={onOpenCart} />
       <CategoryNav selected={category} onSelect={setCategory} />
       <div style={{ flex: 1, overflowY: "auto", padding: "24px 20px 120px" }}>
@@ -852,7 +853,7 @@ function ItemDetail({ item, onBack, addToCart, onOpenCart, cartCount, cartTotal,
   };
 
   return (
-    <div style={{ flex: 1, display: "flex", flexDirection: "column" }}>
+    <div style={{ flex: 1, display: "flex", flexDirection: "column", minHeight: 0 }}>
       <HeaderBar cartCount={cartCount} cartTotal={cartTotal} onOpenCart={onOpenCart} />
       <div style={{ flex: 1, overflowY: "auto", padding: "0 0 120px" }}>
         <div style={{
